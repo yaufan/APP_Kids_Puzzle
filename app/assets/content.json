@@ -47,7 +47,7 @@
      ],
      "anim": "pulse",
      "sound": "pop",
-     "line": "西瓜裂開，籽跳出來囉！"
+     "line": "西瓜裂開，籽跳到上面囉！"
     },
     {
      "id": "banana",
@@ -89,7 +89,7 @@
      ],
      "anim": "wiggle",
      "sound": "munch",
-     "line": "釋迦凸凸的，像一顆顆小拼圖！"
+     "line": "釋迦凸凸的，一顆一顆擠在一起！"
     },
     {
      "id": "wax_apple",
@@ -140,7 +140,7 @@
      ],
      "anim": "nod",
      "sound": "munch",
-     "line": "黑熊坐在樹下，大口吃芒果！"
+     "line": "黑熊坐在大樹下面，大口吃芒果！"
     },
     {
      "id": "leopard_cat",
@@ -238,7 +238,7 @@
      ],
      "anim": "sway",
      "sound": "ooh",
-     "line": "獼猴抓著樹枝，盪來盪去！"
+     "line": "獼猴抓著上面的樹枝，盪來盪去！"
     }
    ]
   },
@@ -396,7 +396,7 @@
      ],
      "anim": "drive",
      "sound": "whoosh",
-     "line": "高鐵咻一下，開得好快！"
+     "line": "高鐵咻一下，開到右邊囉！"
     },
     {
      "id": "train",
@@ -438,7 +438,7 @@
      ],
      "anim": "drive",
      "sound": "garbage",
-     "line": "垃圾車來了，音樂響囉！"
+     "line": "垃圾車開到房子旁邊，音樂響囉！"
     },
     {
      "id": "bike",
@@ -503,7 +503,7 @@
      ],
      "anim": "nod",
      "sound": "cymbal",
-     "line": "舞獅搖搖頭，眨眨眼睛！"
+     "line": "舞獅搖搖頭，大眼睛在上面眨呀眨！"
     },
     {
      "id": "dragon",
@@ -680,7 +680,7 @@
      ],
      "anim": "pulse",
      "sound": "waves",
-     "line": "燈塔站在海邊，亮亮的！"
+     "line": "燈塔站在海的旁邊，上面亮亮的！"
     },
     {
      "id": "beach",

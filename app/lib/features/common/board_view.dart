@@ -126,6 +126,9 @@ class PuzzleBoardState extends ConsumerState<PuzzleBoard> {
   // ---------------------------------------------------------------- for tests and the demo video
   Offset _global(Offset local) => (context.findRenderObject()! as RenderBox).localToGlobal(local);
 
+  /// Screen points per board unit.
+  double get scale => _layout!.scale;
+
   /// Where [p] is drawn now (its middle), on the screen.
   Offset pieceAt(Piece p) => _global(_where(p, _layout!).$1);
 

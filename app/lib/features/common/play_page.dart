@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -56,26 +57,45 @@ class PlayPage extends ConsumerStatefulWidget {
 
 class _PlayPageState extends ConsumerState<PlayPage> {
   late final Busy _busy = ref.read(busyProvider.notifier);
+  Timer? _cheer;
+
+  /// After a puzzle is done, the celebration still counts as busy for a little while (the rest
+  /// does not cut the picture coming alive short).
+  static const celebrate = Duration(seconds: 4);
+
+  void _update() {
+    final playing = widget.busy && widget.done == null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (playing) {
+        _cheer?.cancel();
+        _cheer = null;
+        _busy.set(true);
+      } else if (widget.done != null) {
+        _cheer ??= Timer(celebrate, () {
+          if (mounted) _busy.set(false);
+        });
+      } else {
+        _busy.set(false);
+      }
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _busy.set(widget.busy && widget.done == null);
-    });
+    _update();
   }
 
   @override
   void didUpdateWidget(PlayPage old) {
     super.didUpdateWidget(old);
-    final busy = widget.busy && widget.done == null;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _busy.set(busy);
-    });
+    _update();
   }
 
   @override
   void dispose() {
+    _cheer?.cancel();
     // Not while the tree is being torn down: just after (the next page sets its own after its first frame).
     final busy = _busy;
     Future(() => busy.set(false));

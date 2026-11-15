@@ -67,7 +67,7 @@ class Busy extends Notifier<bool> {
   bool build() => false;
 
   void set(bool v) {
-    if (state != v) state = v;
+    if (ref.mounted && state != v) state = v;
   }
 }
 
