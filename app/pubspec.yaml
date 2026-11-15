@@ -1,0 +1,46 @@
+name: puzzle_workshop
+description: "拼拼樂工坊：2 歲半～5 歲的拼圖、七巧板和形狀積木。"
+publish_to: 'none'
+
+# The version (also in lib/app/version.dart and CHANGELOG.md; test/version_test.dart checks they agree).
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.7
+
+dependencies:
+  audioplayers: ^6.8.1
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+  flutter_svg: ^2.3.0
+  flutter_tts: ^4.2.5
+  go_router: ^18.1.1
+  path: ^1.9.1
+  path_provider: ^2.1.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/content.json
+    - assets/tangram.json
+    - assets/blocks.json
+    - assets/taiwan.json
+    - assets/sounds/
+    - assets/art/pictures/
+    - assets/art/actors/
+    - assets/art/backs/
+    - assets/art/inset/
+    - assets/art/helpers/
+    - assets/art/ui/
+  fonts:
+    - family: Huninn
+      fonts:
+        - asset: assets/fonts/jf-openhuninn-2.1.ttf
