@@ -58,6 +58,17 @@
 - 完整流程和截圖：`flutter test test/flow_test.dart`，截圖在 `app/build/screenshots/`。
 - 示範影片（每一版都要給使用者）：在 `app/` 裡 `flutter test test/demo/demo_video_test.dart --dart-define=DEMO=true`（約 5～10 分鐘，要 ffmpeg），再在專案根目錄 `python3 tools/demo_audio.py` 把背景音樂和音效混進去。輸出 `app/build/demo/demo.mp4`；`chapters.txt` 是每一段開始的格數（每秒 10 格），用來剪新功能的片段。
 
+## 程式在哪裡
+- `design/content.py`：六盒 48 張拼圖（場景、會動的東西和它的框、怎麼動、聲音、小幫手說的空間的話）和六塊嵌板，寫成 `app/assets/content.json`。
+- `design/puzzles.py`：七巧板 24 個（小小和中一塊一塊寫好；大的七塊用小小的「拼法搜尋」從外框算出來，一定拼得出來）、照著拼 12 張（三角形格子；大的「其他拼法」也算好）、台灣大拼圖 48 塊，用 shapely 檢查，寫成 `tangram.json`、`blocks.json`、`taiwan.json`；`preview` 畫出來看。
+- `app/lib/core/`：`content.dart`（讀上面的 json；`Level`、`Mode`、`Helper` 六隻小幫手）、`jigsaw.dart`（同一張圖切成 2～24 塊，凸凹用圖的名字當亂數種子；角、邊、中間的順序）、`board.dart`（拼東西的規則：磁鐵、最近的位置贏、轉對了沒、托盤一次 6 塊、點和拖分開、不會拖出畫面）、`shapes.dart`（形狀盒的形狀和六關）、`game.dart`（設定、塊數的梯子、進度、今天、休息）、存檔、聲音（拼的時候音樂小聲）、語音（每隻小幫手自己的音高）、providers（`busyProvider`：正在拼，時間到了可以拼完）。
+- `app/lib/app/`：router 和休息時間（`app.dart`，`RestGuard`：家長模式和背景的時間不算、正在拼的可以再 2 分鐘）、`wood.dart`（Flutter 畫木頭：木片、洞、板子）、`widgets.dart`（`Pressable`、`HelperSays`、`DoneButtons`……）、`strings.dart`（所有的字；**APP 名稱只在 `Strings.appName`**，和 Android、iOS 的名稱一起改，`safety_test` 會檢查）、`theme.dart`。
+- `app/lib/features/`：`common/board_view.dart`（**四種玩法共用的拖放引擎**：原始手指事件、只認第一隻手指、取消就放回、點一下拿起再點位置、提示、轉和翻）、`common/play_page.dart`（拼圖頁、拼好的面板、`Alive` 圖動起來、`TaiwanView` 台灣大拼圖）、`helper/`、`home/`（工坊，家長的鎖要按住）、`shapes/`（形狀盒、嵌板）、`jigsaw/`（盒子、選圖和塊數、拼圖、點台灣的塊再看一次）、`tangram/`、`blocks/`、`rest/`、`parent/`。
+- 圖：`design/art/`（`kit.py` 彩繪木頭的畫法、`helpers.py`、`actors.py`、`pictures.py`、`ui.py`、`icon.py`；`build.py all`、`sheet`、`fluttercheck`），約定在 `docs/art.md`。聲音：`design/sounds/make_sounds.py`（`README.md` 有每個檔）。
+- 測試：`rules_test`（切拼圖、拼東西的規則、七巧板和積木的資料、存檔）、`art_test`、`safety_test`、`version_test`、`screens_test`（兄弟 APP 檢查過的問題：玩的時間、語音、第一隻手指、取消、點和拖、開關、小手機）、`flow_test`（手機和平板，三個難度、每種玩法，截圖 37 張）、`demo/demo_video_test.dart`（`--dart-define=DEMO=true`，再 `python3 tools/demo_audio.py`）。
+
 ## 目前的狀態（2026-11-15）
-- 設計定案（`docs/design.md` 最後「已經決定的事」），0.1 開發中。
-- GitHub 專案使用者還沒建；先在本機的 `claude/relaxed-albattani-6mbwpz` 分支 commit，建好後再推。
+- 0.1.0 做好了、還沒發布：本機測試全部通過（分析零問題、單元和畫面測試、手機和平板的完整流程、示範影片），commit 在 `claude/relaxed-albattani-6mbwpz` 分支。
+- GitHub 專案 `APP_Kids_Puzzle` 可能還沒建；建好、Secrets 加好、使用者同意後才推 `main`（會跑 App 和 Release）。
+- 名稱「拼拼樂工坊」還在跟使用者確認（他打的是「拚拚樂工坊」）；要改的話改 `Strings.appName`、`AndroidManifest.xml`、`Info.plist`、`CHANGELOG.md` 和 README。
+- 還沒在真手機上試過：拖拉的手感和磁鐵的強弱、24 塊在小手機上好不好拿、平行四邊形的「翻」按鈕、每隻小幫手的語音高低、TTS 念的話、聲音好不好聽（做的時候沒辦法用耳朵聽）、音樂的大小、休息時正在拼的可以拼完。
