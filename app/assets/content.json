@@ -1,0 +1,1030 @@
+{
+ "boxes": [
+  {
+   "id": "fruit",
+   "zh": "水果盒",
+   "color": "#F2994A",
+   "music": "fruit",
+   "free": true,
+   "pictures": [
+    {
+     "id": "mango_ice",
+     "zh": "芒果冰",
+     "actor": "mango_ice",
+     "box": [
+      125,
+      70,
+      160,
+      160
+     ],
+     "anim": "wiggle",
+     "sound": "munch",
+     "line": "芒果冰冰涼涼，芒果在最上面！"
+    },
+    {
+     "id": "pineapple",
+     "zh": "鳳梨",
+     "actor": "pineapple",
+     "box": [
+      140,
+      50,
+      130,
+      190
+     ],
+     "anim": "hop",
+     "sound": "boing",
+     "line": "鳳梨的葉子在頭上！"
+    },
+    {
+     "id": "watermelon",
+     "zh": "西瓜",
+     "actor": "watermelon",
+     "box": [
+      115,
+      95,
+      170,
+      140
+     ],
+     "anim": "pulse",
+     "sound": "pop",
+     "line": "西瓜裂開，籽跳出來囉！"
+    },
+    {
+     "id": "banana",
+     "zh": "香蕉",
+     "actor": "banana",
+     "box": [
+      110,
+      85,
+      180,
+      140
+     ],
+     "anim": "sway",
+     "sound": "boing",
+     "line": "彎彎的香蕉，在盤子上面！"
+    },
+    {
+     "id": "lychee",
+     "zh": "荔枝",
+     "actor": "lychee",
+     "box": [
+      130,
+      60,
+      150,
+      170
+     ],
+     "anim": "hop",
+     "sound": "pop",
+     "line": "一串荔枝，掛在樹枝下面！"
+    },
+    {
+     "id": "sugar_apple",
+     "zh": "釋迦",
+     "actor": "sugar_apple",
+     "box": [
+      130,
+      70,
+      150,
+      160
+     ],
+     "anim": "wiggle",
+     "sound": "munch",
+     "line": "釋迦凸凸的，像一顆顆小拼圖！"
+    },
+    {
+     "id": "wax_apple",
+     "zh": "蓮霧",
+     "actor": "wax_apple",
+     "box": [
+      135,
+      70,
+      140,
+      160
+     ],
+     "anim": "hop",
+     "sound": "ding",
+     "line": "紅紅的蓮霧，像小鈴鐺掛在上面！"
+    },
+    {
+     "id": "orange",
+     "zh": "柳丁",
+     "actor": "orange",
+     "box": [
+      60,
+      120,
+      130,
+      130
+     ],
+     "anim": "drive",
+     "sound": "boing",
+     "line": "圓圓的柳丁，滾到右邊囉！"
+    }
+   ]
+  },
+  {
+   "id": "animals",
+   "zh": "動物盒",
+   "color": "#6FAE4E",
+   "music": "animals",
+   "free": true,
+   "pictures": [
+    {
+     "id": "bear",
+     "zh": "台灣黑熊",
+     "actor": "bear",
+     "box": [
+      110,
+      70,
+      180,
+      190
+     ],
+     "anim": "nod",
+     "sound": "munch",
+     "line": "黑熊坐在樹下，大口吃芒果！"
+    },
+    {
+     "id": "leopard_cat",
+     "zh": "石虎",
+     "actor": "leopard_cat",
+     "box": [
+      110,
+      90,
+      180,
+      160
+     ],
+     "anim": "hop",
+     "sound": "mew",
+     "line": "石虎躲在草叢後面！"
+    },
+    {
+     "id": "magpie",
+     "zh": "台灣藍鵲",
+     "actor": "magpie",
+     "box": [
+      90,
+      60,
+      220,
+      150
+     ],
+     "anim": "fly",
+     "sound": "chirp",
+     "line": "藍鵲飛到天空上面囉！"
+    },
+    {
+     "id": "deer",
+     "zh": "梅花鹿",
+     "actor": "deer",
+     "box": [
+      110,
+      60,
+      180,
+      190
+     ],
+     "anim": "hop",
+     "sound": "bleat",
+     "line": "梅花鹿跳過小草地！"
+    },
+    {
+     "id": "pangolin",
+     "zh": "穿山甲",
+     "actor": "pangolin",
+     "box": [
+      70,
+      120,
+      170,
+      130
+     ],
+     "anim": "drive",
+     "sound": "sniff",
+     "line": "穿山甲捲成一顆球，滾到旁邊！"
+    },
+    {
+     "id": "turtle",
+     "zh": "綠蠵龜",
+     "actor": "turtle",
+     "box": [
+      90,
+      80,
+      200,
+      150
+     ],
+     "anim": "swim",
+     "sound": "waves",
+     "line": "綠蠵龜在海裡游，游到右邊！"
+    },
+    {
+     "id": "salmon",
+     "zh": "櫻花鉤吻鮭",
+     "actor": "salmon",
+     "box": [
+      100,
+      110,
+      200,
+      110
+     ],
+     "anim": "swim",
+     "sound": "splash",
+     "line": "鮭魚在溪水裡游來游去！"
+    },
+    {
+     "id": "macaque",
+     "zh": "台灣獼猴",
+     "actor": "macaque",
+     "box": [
+      140,
+      70,
+      140,
+      180
+     ],
+     "anim": "sway",
+     "sound": "ooh",
+     "line": "獼猴抓著樹枝，盪來盪去！"
+    }
+   ]
+  },
+  {
+   "id": "night",
+   "zh": "夜市盒",
+   "color": "#7B6CC8",
+   "music": "night",
+   "free": false,
+   "pictures": [
+    {
+     "id": "bubble_tea",
+     "zh": "珍珠奶茶",
+     "actor": "bubble_tea",
+     "box": [
+      140,
+      50,
+      120,
+      200
+     ],
+     "anim": "wiggle",
+     "sound": "pop",
+     "line": "珍珠在杯子下面！"
+    },
+    {
+     "id": "egg_cake",
+     "zh": "雞蛋糕",
+     "actor": "egg_cake",
+     "box": [
+      110,
+      90,
+      180,
+      150
+     ],
+     "anim": "hop",
+     "sound": "munch",
+     "line": "雞蛋糕排排站，一個在一個旁邊！"
+    },
+    {
+     "id": "corn",
+     "zh": "烤玉米",
+     "actor": "corn",
+     "box": [
+      120,
+      70,
+      160,
+      180
+     ],
+     "anim": "wiggle",
+     "sound": "sizzle",
+     "line": "烤玉米在烤架上面！"
+    },
+    {
+     "id": "tanghulu",
+     "zh": "糖葫蘆",
+     "actor": "tanghulu",
+     "box": [
+      150,
+      40,
+      100,
+      220
+     ],
+     "anim": "sway",
+     "sound": "pop",
+     "line": "糖葫蘆一顆一顆往上串！"
+    },
+    {
+     "id": "cotton_candy",
+     "zh": "棉花糖",
+     "actor": "cotton_candy",
+     "box": [
+      125,
+      40,
+      150,
+      210
+     ],
+     "anim": "pulse",
+     "sound": "sparkle",
+     "line": "好大一朵棉花糖，在棍子上面！"
+    },
+    {
+     "id": "ring_toss",
+     "zh": "套圈圈",
+     "actor": "ring_toss",
+     "box": [
+      105,
+      70,
+      190,
+      180
+     ],
+     "anim": "spin",
+     "sound": "ding",
+     "line": "圈圈套到瓶子上面囉！"
+    },
+    {
+     "id": "pinball",
+     "zh": "彈珠台",
+     "actor": "pinball",
+     "box": [
+      120,
+      45,
+      160,
+      210
+     ],
+     "anim": "hop",
+     "sound": "ding",
+     "line": "彈珠從上面滾到下面！"
+    },
+    {
+     "id": "bapu",
+     "zh": "叭噗冰淇淋車",
+     "actor": "bapu",
+     "box": [
+      60,
+      90,
+      190,
+      160
+     ],
+     "anim": "drive",
+     "sound": "bapu",
+     "line": "叭噗！冰淇淋車開到右邊囉！"
+    }
+   ]
+  },
+  {
+   "id": "ride",
+   "zh": "捷運和車車盒",
+   "color": "#3F95D1",
+   "music": "ride",
+   "free": false,
+   "pictures": [
+    {
+     "id": "mrt",
+     "zh": "捷運",
+     "actor": "mrt",
+     "box": [
+      30,
+      95,
+      250,
+      110
+     ],
+     "anim": "drive",
+     "sound": "mrt",
+     "line": "叮咚！捷運從左邊開到右邊囉！"
+    },
+    {
+     "id": "hsr",
+     "zh": "高鐵",
+     "actor": "hsr",
+     "box": [
+      30,
+      100,
+      250,
+      100
+     ],
+     "anim": "drive",
+     "sound": "whoosh",
+     "line": "高鐵咻一下，開得好快！"
+    },
+    {
+     "id": "train",
+     "zh": "火車",
+     "actor": "train",
+     "box": [
+      40,
+      100,
+      240,
+      120
+     ],
+     "anim": "drive",
+     "sound": "toot",
+     "line": "火車在鐵軌上面開！"
+    },
+    {
+     "id": "bus",
+     "zh": "公車",
+     "actor": "bus",
+     "box": [
+      50,
+      95,
+      220,
+      140
+     ],
+     "anim": "drive",
+     "sound": "bell",
+     "line": "公車停在站牌旁邊！"
+    },
+    {
+     "id": "garbage",
+     "zh": "垃圾車",
+     "actor": "garbage",
+     "box": [
+      50,
+      90,
+      220,
+      145
+     ],
+     "anim": "drive",
+     "sound": "garbage",
+     "line": "垃圾車來了，音樂響囉！"
+    },
+    {
+     "id": "bike",
+     "zh": "腳踏車",
+     "actor": "bike",
+     "box": [
+      70,
+      100,
+      180,
+      140
+     ],
+     "anim": "drive",
+     "sound": "bell",
+     "line": "腳踏車叮叮，騎到右邊！"
+    },
+    {
+     "id": "boat",
+     "zh": "漁船",
+     "actor": "boat",
+     "box": [
+      90,
+      90,
+      210,
+      150
+     ],
+     "anim": "swim",
+     "sound": "waves",
+     "line": "漁船在海上面搖呀搖！"
+    },
+    {
+     "id": "alishan",
+     "zh": "阿里山小火車",
+     "actor": "alishan",
+     "box": [
+      40,
+      110,
+      220,
+      120
+     ],
+     "anim": "drive",
+     "sound": "toot",
+     "line": "小火車爬上山，經過大樹旁邊！"
+    }
+   ]
+  },
+  {
+   "id": "temple",
+   "zh": "廟會盒",
+   "color": "#D9534A",
+   "music": "temple",
+   "free": false,
+   "pictures": [
+    {
+     "id": "lion",
+     "zh": "舞獅",
+     "actor": "lion",
+     "box": [
+      100,
+      70,
+      200,
+      180
+     ],
+     "anim": "nod",
+     "sound": "cymbal",
+     "line": "舞獅搖搖頭，眨眨眼睛！"
+    },
+    {
+     "id": "dragon",
+     "zh": "舞龍",
+     "actor": "dragon",
+     "box": [
+      40,
+      70,
+      260,
+      160
+     ],
+     "anim": "swim",
+     "sound": "drum",
+     "line": "舞龍彎彎的，從左邊游到右邊！"
+    },
+    {
+     "id": "lantern",
+     "zh": "元宵花燈",
+     "actor": "lantern",
+     "box": [
+      135,
+      40,
+      130,
+      200
+     ],
+     "anim": "sway",
+     "sound": "ding",
+     "line": "花燈掛在上面，亮晶晶！"
+    },
+    {
+     "id": "puppet",
+     "zh": "布袋戲",
+     "actor": "puppet",
+     "box": [
+      130,
+      50,
+      140,
+      200
+     ],
+     "anim": "hop",
+     "sound": "drum",
+     "line": "布袋戲偶從台子上面跳出來！"
+    },
+    {
+     "id": "sky_lantern",
+     "zh": "天燈",
+     "actor": "sky_lantern",
+     "box": [
+      140,
+      100,
+      120,
+      150
+     ],
+     "anim": "fly",
+     "sound": "wind",
+     "line": "天燈慢慢飛到天上面！"
+    },
+    {
+     "id": "drum",
+     "zh": "大鼓",
+     "actor": "drum",
+     "box": [
+      115,
+      70,
+      170,
+      170
+     ],
+     "anim": "pulse",
+     "sound": "drum",
+     "line": "咚咚咚，大鼓在中間！"
+    },
+    {
+     "id": "top",
+     "zh": "陀螺",
+     "actor": "top",
+     "box": [
+      140,
+      80,
+      120,
+      160
+     ],
+     "anim": "spin",
+     "sound": "spin",
+     "line": "陀螺轉呀轉，轉一圈又一圈！"
+    },
+    {
+     "id": "big_tree",
+     "zh": "廟口的大樹下",
+     "actor": "bench",
+     "box": [
+      140,
+      165,
+      140,
+      90
+     ],
+     "anim": "sway",
+     "sound": "chirp",
+     "line": "大樹下面好涼快，坐在椅子上！"
+    }
+   ]
+  },
+  {
+   "id": "city",
+   "zh": "城市盒",
+   "color": "#2FA6A0",
+   "music": "city",
+   "free": false,
+   "pictures": [
+    {
+     "id": "taipei101",
+     "zh": "台北 101",
+     "actor": "taipei101",
+     "box": [
+      150,
+      15,
+      100,
+      270
+     ],
+     "anim": "pulse",
+     "sound": "ding",
+     "line": "101 好高好高，站在最中間！"
+    },
+    {
+     "id": "fireworks",
+     "zh": "新年煙火",
+     "actor": "fireworks",
+     "box": [
+      90,
+      15,
+      220,
+      150
+     ],
+     "anim": "pulse",
+     "sound": "fireworks",
+     "line": "煙火在 101 上面開花！"
+    },
+    {
+     "id": "ferris",
+     "zh": "摩天輪",
+     "actor": "ferris",
+     "box": [
+      110,
+      30,
+      180,
+      220
+     ],
+     "anim": "spin",
+     "sound": "chime",
+     "line": "摩天輪轉一圈，好高喔！"
+    },
+    {
+     "id": "sun_moon",
+     "zh": "日月潭",
+     "actor": "lake_boat",
+     "box": [
+      120,
+      140,
+      160,
+      90
+     ],
+     "anim": "swim",
+     "sound": "waves",
+     "line": "小船在日月潭上面！"
+    },
+    {
+     "id": "lighthouse",
+     "zh": "燈塔",
+     "actor": "lighthouse",
+     "box": [
+      150,
+      30,
+      100,
+      230
+     ],
+     "anim": "pulse",
+     "sound": "waves",
+     "line": "燈塔站在海邊，亮亮的！"
+    },
+    {
+     "id": "beach",
+     "zh": "海邊",
+     "actor": "crab",
+     "box": [
+      130,
+      150,
+      140,
+      110
+     ],
+     "anim": "drive",
+     "sound": "waves",
+     "line": "螃蟹在沙灘上面走到旁邊！"
+    },
+    {
+     "id": "rainbow_bridge",
+     "zh": "彩虹橋",
+     "actor": "rainbow_bridge",
+     "box": [
+      40,
+      80,
+      320,
+      150
+     ],
+     "anim": "pulse",
+     "sound": "bell",
+     "line": "彩虹橋彎彎的，跨在河上面！"
+    },
+    {
+     "id": "slide",
+     "zh": "公園溜滑梯",
+     "actor": "slide",
+     "box": [
+      100,
+      60,
+      200,
+      200
+     ],
+     "anim": "hop",
+     "sound": "boing",
+     "line": "從溜滑梯上面滑下來！"
+    }
+   ]
+  }
+ ],
+ "insets": [
+  {
+   "id": "fruit",
+   "zh": "水果嵌板",
+   "color": "#F2994A",
+   "items": [
+    {
+     "actor": "watermelon",
+     "zh": "西瓜",
+     "x": 75,
+     "y": 82,
+     "size": 112,
+     "line": "紅紅的西瓜，放在左上角！"
+    },
+    {
+     "actor": "pineapple",
+     "zh": "鳳梨",
+     "x": 200,
+     "y": 82,
+     "size": 112,
+     "line": "黃黃的鳳梨，放在上面中間！"
+    },
+    {
+     "actor": "banana",
+     "zh": "香蕉",
+     "x": 325,
+     "y": 82,
+     "size": 112,
+     "line": "彎彎的香蕉，放在右上角！"
+    },
+    {
+     "actor": "mango",
+     "zh": "芒果",
+     "x": 75,
+     "y": 220,
+     "size": 112,
+     "line": "黃黃的芒果，放在左下角！"
+    },
+    {
+     "actor": "lychee",
+     "zh": "荔枝",
+     "x": 200,
+     "y": 220,
+     "size": 112,
+     "line": "紅紅的荔枝，放在下面中間！"
+    },
+    {
+     "actor": "sugar_apple",
+     "zh": "釋迦",
+     "x": 325,
+     "y": 220,
+     "size": 112,
+     "line": "綠綠的釋迦，放在右下角！"
+    }
+   ]
+  },
+  {
+   "id": "animals",
+   "zh": "動物嵌板",
+   "color": "#6FAE4E",
+   "items": [
+    {
+     "actor": "bear",
+     "zh": "黑熊",
+     "x": 75,
+     "y": 82,
+     "size": 112,
+     "line": "黑黑的黑熊，放在左上角！"
+    },
+    {
+     "actor": "leopard_cat",
+     "zh": "石虎",
+     "x": 200,
+     "y": 82,
+     "size": 112,
+     "line": "有花紋的石虎，放在上面中間！"
+    },
+    {
+     "actor": "magpie",
+     "zh": "藍鵲",
+     "x": 325,
+     "y": 82,
+     "size": 112,
+     "line": "藍藍的藍鵲，放在右上角！"
+    },
+    {
+     "actor": "deer",
+     "zh": "梅花鹿",
+     "x": 75,
+     "y": 220,
+     "size": 112,
+     "line": "有白點點的梅花鹿，放在左下角！"
+    },
+    {
+     "actor": "pangolin",
+     "zh": "穿山甲",
+     "x": 200,
+     "y": 220,
+     "size": 112,
+     "line": "有鱗片的穿山甲，放在下面中間！"
+    },
+    {
+     "actor": "turtle",
+     "zh": "海龜",
+     "x": 325,
+     "y": 220,
+     "size": 112,
+     "line": "綠綠的海龜，放在右下角！"
+    }
+   ]
+  },
+  {
+   "id": "ride",
+   "zh": "車車嵌板",
+   "color": "#3F95D1",
+   "items": [
+    {
+     "actor": "mrt",
+     "zh": "捷運",
+     "x": 75,
+     "y": 82,
+     "size": 112,
+     "line": "長長的捷運，放在左上角！"
+    },
+    {
+     "actor": "bus",
+     "zh": "公車",
+     "x": 200,
+     "y": 82,
+     "size": 112,
+     "line": "大大的公車，放在上面中間！"
+    },
+    {
+     "actor": "garbage",
+     "zh": "垃圾車",
+     "x": 325,
+     "y": 82,
+     "size": 112,
+     "line": "會唱歌的垃圾車，放在右上角！"
+    },
+    {
+     "actor": "bike",
+     "zh": "腳踏車",
+     "x": 137,
+     "y": 220,
+     "size": 112,
+     "line": "有兩個輪子的腳踏車，放在下面左邊！"
+    },
+    {
+     "actor": "train",
+     "zh": "火車",
+     "x": 263,
+     "y": 220,
+     "size": 112,
+     "line": "嘟嘟叫的火車，放在下面右邊！"
+    }
+   ]
+  },
+  {
+   "id": "night",
+   "zh": "夜市嵌板",
+   "color": "#7B6CC8",
+   "items": [
+    {
+     "actor": "bubble_tea",
+     "zh": "珍珠奶茶",
+     "x": 75,
+     "y": 82,
+     "size": 112,
+     "line": "甜甜的珍珠奶茶，放在左上角！"
+    },
+    {
+     "actor": "egg_cake",
+     "zh": "雞蛋糕",
+     "x": 200,
+     "y": 82,
+     "size": 112,
+     "line": "香香的雞蛋糕，放在上面中間！"
+    },
+    {
+     "actor": "corn",
+     "zh": "烤玉米",
+     "x": 325,
+     "y": 82,
+     "size": 112,
+     "line": "黃黃的烤玉米，放在右上角！"
+    },
+    {
+     "actor": "tanghulu",
+     "zh": "糖葫蘆",
+     "x": 137,
+     "y": 220,
+     "size": 112,
+     "line": "紅紅的糖葫蘆，放在下面左邊！"
+    },
+    {
+     "actor": "cotton_candy",
+     "zh": "棉花糖",
+     "x": 263,
+     "y": 220,
+     "size": 112,
+     "line": "軟軟的棉花糖，放在下面右邊！"
+    }
+   ]
+  },
+  {
+   "id": "temple",
+   "zh": "廟會嵌板",
+   "color": "#D9534A",
+   "items": [
+    {
+     "actor": "lion",
+     "zh": "舞獅",
+     "x": 75,
+     "y": 82,
+     "size": 112,
+     "line": "會眨眼的舞獅，放在左上角！"
+    },
+    {
+     "actor": "lantern",
+     "zh": "花燈",
+     "x": 200,
+     "y": 82,
+     "size": 112,
+     "line": "亮亮的花燈，放在上面中間！"
+    },
+    {
+     "actor": "puppet",
+     "zh": "布袋戲偶",
+     "x": 325,
+     "y": 82,
+     "size": 112,
+     "line": "會跳的布袋戲偶，放在右上角！"
+    },
+    {
+     "actor": "drum",
+     "zh": "大鼓",
+     "x": 137,
+     "y": 220,
+     "size": 112,
+     "line": "咚咚響的大鼓，放在下面左邊！"
+    },
+    {
+     "actor": "top",
+     "zh": "陀螺",
+     "x": 263,
+     "y": 220,
+     "size": 112,
+     "line": "會轉的陀螺，放在下面右邊！"
+    }
+   ]
+  },
+  {
+   "id": "sea",
+   "zh": "海邊嵌板",
+   "color": "#2FA6A0",
+   "items": [
+    {
+     "actor": "crab",
+     "zh": "螃蟹",
+     "x": 75,
+     "y": 82,
+     "size": 112,
+     "line": "紅紅的螃蟹，放在左上角！"
+    },
+    {
+     "actor": "shell",
+     "zh": "貝殼",
+     "x": 200,
+     "y": 82,
+     "size": 112,
+     "line": "白白的貝殼，放在上面中間！"
+    },
+    {
+     "actor": "boat",
+     "zh": "漁船",
+     "x": 325,
+     "y": 82,
+     "size": 112,
+     "line": "搖搖的漁船，放在右上角！"
+    },
+    {
+     "actor": "lighthouse",
+     "zh": "燈塔",
+     "x": 137,
+     "y": 220,
+     "size": 112,
+     "line": "高高的燈塔，放在下面左邊！"
+    },
+    {
+     "actor": "starfish",
+     "zh": "海星",
+     "x": 263,
+     "y": 220,
+     "size": 112,
+     "line": "五個角的海星，放在下面右邊！"
+    }
+   ]
+  }
+ ]
+}
