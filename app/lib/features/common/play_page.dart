@@ -70,13 +70,16 @@ class _PlayPageState extends ConsumerState<PlayPage> {
       if (playing) {
         _cheer?.cancel();
         _cheer = null;
-        _busy.set(true);
+        _busy.set(true, owner: this);
       } else if (widget.done != null) {
-        _cheer ??= Timer(celebrate, () {
-          if (mounted) _busy.set(false);
-        });
+        if (_cheer == null) {
+          _busy.set(true, owner: this, celebrating: true);
+          _cheer = Timer(celebrate, () {
+            if (mounted) _busy.set(false, owner: this);
+          });
+        }
       } else {
-        _busy.set(false);
+        _busy.set(false, owner: this);
       }
     });
   }
@@ -98,7 +101,7 @@ class _PlayPageState extends ConsumerState<PlayPage> {
     _cheer?.cancel();
     // Not while the tree is being torn down: just after (the next page sets its own after its first frame).
     final busy = _busy;
-    Future(() => busy.set(false));
+    Future(() => busy.set(false, owner: this));
     super.dispose();
   }
 
@@ -275,8 +278,9 @@ class AliveState extends State<Alive> with SingleTickerProviderStateMixin {
 }
 
 /// The Taiwan puzzle (docs/design.md 「台灣大拼圖」): 48 pieces, one for each picture, in its
-/// box's colour once that picture was finished. A tap on a coloured piece shows its picture again.
-class TaiwanView extends ConsumerWidget {
+/// box's colour once that picture was finished. A tap on a coloured piece shows its picture again
+/// (a finger scrolling the workshop past it is not a tap).
+class TaiwanView extends ConsumerStatefulWidget {
   const TaiwanView({super.key, this.onPiece, this.fresh});
 
   final void Function(Picture p)? onPiece;
@@ -285,7 +289,16 @@ class TaiwanView extends ConsumerWidget {
   final String? fresh;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TaiwanView> createState() => _TaiwanViewState();
+}
+
+class _TaiwanViewState extends ConsumerState<TaiwanView> {
+  int? _pointer;
+  Offset _from = Offset.zero;
+
+  @override
+  Widget build(BuildContext context) {
+    final onPiece = widget.onPiece, fresh = widget.fresh;
     final lib = ref.watch(libraryProvider);
     final done = ref.watch(gameProvider.select((g) => g.pictures));
     final map = lib.taiwan;
@@ -296,14 +309,29 @@ class TaiwanView extends ConsumerWidget {
         final k = box.maxWidth / map.size.width;
         return Listener(
           behavior: HitTestBehavior.opaque,
+          onPointerDown: onPiece == null
+              ? null
+              : (e) {
+                  if (_pointer != null) return;
+                  _pointer = e.pointer;
+                  _from = e.position;
+                },
+          onPointerMove: (e) {
+            if (e.pointer == _pointer && (e.position - _from).distance > tapSlop) _pointer = null;
+          },
+          onPointerCancel: (e) {
+            if (e.pointer == _pointer) _pointer = null;
+          },
           onPointerUp: onPiece == null
               ? null
               : (e) {
+                  if (e.pointer != _pointer) return;
+                  _pointer = null;
                   final at = e.localPosition / k;
                   for (var i = 0; i < map.pieces.length; i++) {
                     final pic = byPiece[i];
                     if (pic != null && done.contains(pic.id) && (Path()..addPolygon(map.pieces[i], true)).contains(at)) {
-                      onPiece!(pic);
+                      onPiece(pic);
                       return;
                     }
                   }

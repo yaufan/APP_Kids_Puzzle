@@ -9,23 +9,34 @@ abstract interface class Voice {
 }
 
 class SystemVoice implements Voice {
-  FlutterTts? _tts;
+  Future<FlutterTts>? _ready;
   double? _rate, _pitch;
 
-  Future<FlutterTts> _engine() async {
-    final existing = _tts;
-    if (existing != null) return existing;
-    final tts = _tts = FlutterTts();
-    await tts.awaitSpeakCompletion(true);
-    await tts.setLanguage('zh-TW');
-    return tts;
-  }
+  /// Counts the lines asked for (and stops): a line still waiting for the engine when a newer one
+  /// (or a stop) comes is dropped, so lines never come out of order or over each other at start.
+  var _turn = 0;
+
+  /// The engine, set up once (every line waits for the same setting up).
+  Future<FlutterTts> _engine() => _ready ??= () async {
+        try {
+          final tts = FlutterTts();
+          await tts.awaitSpeakCompletion(true);
+          await tts.setLanguage('zh-TW');
+          return tts;
+        } catch (_) {
+          _ready = null;
+          rethrow;
+        }
+      }();
 
   @override
   Future<void> say(String zh, {bool slow = false, double pitch = 1.15}) async {
+    final turn = ++_turn;
     try {
       final tts = await _engine();
+      if (turn != _turn) return;
       await tts.stop();
+      if (turn != _turn) return;
       final rate = slow ? 0.32 : 0.45;
       if (rate != _rate) {
         _rate = rate;
@@ -35,6 +46,7 @@ class SystemVoice implements Voice {
         _pitch = pitch;
         await tts.setPitch(pitch);
       }
+      if (turn != _turn) return;
       if (zh.isNotEmpty) await tts.speak(zh);
     } catch (_) {
       // No speech engine (tests, or a phone without one): the pictures and the words on screen
@@ -44,8 +56,11 @@ class SystemVoice implements Voice {
 
   @override
   Future<void> stop() async {
+    _turn++;
+    final ready = _ready;
+    if (ready == null) return;
     try {
-      await _tts?.stop();
+      await (await ready).stop();
     } catch (_) {}
   }
 }
@@ -60,18 +75,37 @@ class SilentVoice implements Voice {
   Future<void> stop() async {}
 }
 
-/// Remembers what was said, at which pitch, and how often it was stopped (tests).
+/// Remembers what was said, at which pitch, and how often it was stopped (tests). With
+/// [speaking], each line takes that long, and a line still being said when the next one starts
+/// is noted in [cut].
 class RecordingVoice implements Voice {
+  RecordingVoice({this.speaking = Duration.zero});
+
+  final Duration speaking;
   final said = <String>[];
   final pitches = <double>[];
+  final cut = <String>[];
   var stops = 0;
+  var _line = 0;
+  String? _saying;
 
   @override
   Future<void> say(String zh, {bool slow = false, double pitch = 1.15}) async {
+    final before = _saying;
+    if (before != null) cut.add(before);
     said.add(zh);
     pitches.add(pitch);
+    if (speaking == Duration.zero) return;
+    final me = ++_line;
+    _saying = zh;
+    await Future<void>.delayed(speaking);
+    if (me == _line) _saying = null;
   }
 
   @override
-  Future<void> stop() async => stops++;
+  Future<void> stop() async {
+    stops++;
+    _line++;
+    _saying = null;
+  }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:puzzle_workshop/app/strings.dart';
 import 'package:puzzle_workshop/app/widgets.dart';
@@ -8,6 +9,7 @@ import 'package:puzzle_workshop/core/board.dart';
 import 'package:puzzle_workshop/core/content.dart';
 import 'package:puzzle_workshop/core/game.dart';
 import 'package:puzzle_workshop/core/providers.dart';
+import 'package:puzzle_workshop/core/voice.dart';
 import 'package:puzzle_workshop/features/parent/parent_gate.dart';
 
 import 'helpers.dart';
@@ -261,7 +263,9 @@ void main() {
     await app.settle(900);
     final b = boardOf(tester);
     expect(b.widget.turning, Turning.tap);
-    final p = b.trayPieces.firstWhere((q) => !Board.sameTurn(q.angle, q.flip, b.board.home(q)!));
+    // Turned wrong for every place of its shape (one turned right for the other big triangle would
+    // go there: test/rules_test.dart).
+    final p = b.trayPieces.firstWhere((q) => b.board.slots.where((s) => s.kind == q.kind).every((s) => !Board.sameTurn(q.angle, q.flip, s)));
     final s = b.board.home(p)!;
     for (var i = 0; i < 2; i++) {
       await dragFinger(app, b.pieceAt(p), b.fingerFor(p, s));
@@ -274,6 +278,239 @@ void main() {
     await app.settle(500);
     expect(b.board.placed.keys, [p.id]);
     expect(app.voice.pitches.last, Helper.macaque.pitch, reason: 'in the helper\'s own voice');
+    await app.end();
+  });
+
+  // ---------------------------------------------------------------- the code review (2026-11-15)
+
+  void hide(WidgetTester tester) {
+    for (final s in [AppLifecycleState.inactive, AppLifecycleState.hidden, AppLifecycleState.paused]) {
+      tester.binding.handleAppLifecycleStateChanged(s);
+    }
+  }
+
+  void show(WidgetTester tester) {
+    for (final s in [AppLifecycleState.hidden, AppLifecycleState.inactive, AppLifecycleState.resumed]) {
+      tester.binding.handleAppLifecycleStateChanged(s);
+    }
+  }
+
+  testWidgets('a palm resting on the board does not stop another finger from moving a piece', (tester) async {
+    final app = await TestApp.start(tester);
+    app.go('/shapes/inset?board=fruit');
+    await app.settle(900);
+    final b = boardOf(tester);
+    final p = b.trayPieces.first;
+    final s = b.board.home(p)!;
+    final elsewhere = b.board.slots.firstWhere((x) => x.id != s.id);
+    final palm = await tester.startGesture(b.fingerFor(p, elsewhere), pointer: 1);
+    await tester.pump(const Duration(milliseconds: 300));
+    final g = await tester.startGesture(b.pieceAt(p), pointer: 2);
+    await tester.pump(const Duration(milliseconds: 50));
+    for (var i = 1; i <= 6; i++) {
+      await g.moveTo(Offset.lerp(b.pieceAt(p), b.fingerFor(p, s), i / 6)!);
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    await g.up();
+    await app.settle(400);
+    expect(b.board.placed.keys, [p.id]);
+    await palm.up();
+    await app.settle(300);
+    expect(b.board.placed.keys, [p.id], reason: 'the palm lifting does nothing');
+    await app.end();
+  });
+
+  testWidgets('the app going away mid-drag puts the piece back, and the next touch works', (tester) async {
+    final app = await TestApp.start(tester);
+    app.go('/shapes/inset?board=animals');
+    await app.settle(900);
+    final b = boardOf(tester);
+    final p = b.trayPieces.first;
+    final g1 = await tester.startGesture(b.pieceAt(p), pointer: 1);
+    await tester.pump(const Duration(milliseconds: 50));
+    await g1.moveTo(b.pieceAt(p) + const Offset(20, -120));
+    await tester.pump(const Duration(milliseconds: 50));
+    hide(tester);
+    await app.settle(600);
+    show(tester);
+    await app.settle(600);
+    expect(b.board.placed, isEmpty);
+    expect(b.trayPieces.map((q) => q.id), contains(p.id), reason: 'back in the tray');
+    final q = b.trayPieces.last;
+    await dragFinger(app, b.pieceAt(q), b.fingerFor(q, b.board.home(q)!));
+    await app.settle(400);
+    expect(b.board.placed.keys, [q.id], reason: 'the finger that never lifted does not block the board');
+    await g1.up();
+    await app.end();
+  });
+
+  testWidgets('大 照著拼: the helper\'s paw lights a place even when the first stack has nowhere left to go', (tester) async {
+    final app = await TestApp.start(tester, game: const Game(helper: Helper.bear, settings: Settings(level: Level.big)));
+    app.go('/blocks/play?id=flower');
+    await app.settle(900);
+    final b = boardOf(tester);
+    final hex = b.trayPieces.firstWhere((p) => p.kind == 'hex');
+    await dragFinger(app, b.pieceAt(hex), b.fingerFor(hex, b.board.slots.firstWhere((s) => s.kind == 'hex')));
+    await app.settle(400);
+    expect(b.board.placed.keys, [hex.id]);
+    expect(b.trayPieces.first.kind, 'trap');
+    expect(b.board.home(b.trayPieces.first), isNull, reason: 'no trapezoid fits beside the hexagon');
+    await app.tapLabel(Strings.help);
+    expect(b.glowing, isNotEmpty, reason: 'a triangle\'s place lights up');
+    expect(b.board.slots.firstWhere((s) => s.id == b.glowing.first).kind, 'tri');
+    await app.end();
+  });
+
+  testWidgets('下一張: the new picture may be finished when the time is up, too', (tester) async {
+    final app = await TestApp.start(tester);
+    app.go('/jigsaw/play?pic=bear&cut=r2');
+    await app.settle(900);
+    await solve(app);
+    await app.settle(5000);
+    await app.tapLabel(Strings.next, ms: 900);
+    expect(app.location, '/jigsaw/play');
+    await app.settle(600);
+    expect(app.container.read(busyProvider), isTrue, reason: 'the picture going away did not take the new one\'s busy with it');
+    app.now = app.now.add(const Duration(minutes: 16));
+    await app.settle(2600);
+    expect(app.location, '/jigsaw/play', reason: 'it may be finished');
+    await app.end();
+  });
+
+  testWidgets('a puzzle finished at the end of the two minutes still comes alive before the rest', (tester) async {
+    final app = await TestApp.start(tester);
+    app.go('/jigsaw/play?pic=mango_ice&cut=r2');
+    await app.settle(900);
+    app.now = app.now.add(const Duration(minutes: 16));
+    await app.settle(2600);
+    expect(app.location, '/jigsaw/play');
+    await solve(app);
+    await app.settle(600);
+    app.now = app.now.add(const Duration(minutes: 2, seconds: 5));
+    await app.settle(2600);
+    expect(app.location, '/jigsaw/play', reason: 'the picture is coming alive');
+    await app.settle(2600);
+    expect(app.location, '/rest', reason: 'then the rest, without waiting any longer');
+    await app.end();
+  });
+
+  testWidgets('minutes in the background are not the sitting\'s, and the rest never starts there', (tester) async {
+    final app = await TestApp.start(tester);
+    app.now = app.now.add(const Duration(minutes: 10));
+    await app.settle(2600);
+    hide(tester);
+    app.now = app.now.add(const Duration(minutes: 8));
+    await app.settle(4200);
+    expect(app.location, '/', reason: 'nothing happens out of sight');
+    show(tester);
+    await app.settle(2600);
+    expect(app.location, '/', reason: 'the child has played 10 of the 15 minutes');
+    app.now = app.now.add(const Duration(minutes: 6));
+    await app.settle(2600);
+    expect(app.location, '/rest');
+    await app.end();
+  });
+
+  testWidgets('a phone clock moved back gives no extra play time and does not end the rest', (tester) async {
+    final app = await TestApp.start(tester);
+    app.now = app.now.add(const Duration(minutes: 10));
+    await app.settle(2600);
+    app.now = app.now.subtract(const Duration(hours: 1));
+    await app.settle(2600);
+    expect(app.location, '/');
+    app.now = app.now.add(const Duration(minutes: 6));
+    await app.settle(2600);
+    expect(app.location, '/rest', reason: '16 minutes were played');
+    app.now = app.now.subtract(const Duration(minutes: 30));
+    await app.settle(2600);
+    expect(app.location, '/rest', reason: 'the rest still has most of its hour to go');
+    app.now = app.now.add(const Duration(minutes: 61));
+    await app.settle(2600);
+    expect(app.location, '/');
+    await app.end();
+  });
+
+  testWidgets('the last piece\'s words are said in full before the done line', (tester) async {
+    final voice = RecordingVoice(speaking: const Duration(milliseconds: 1500));
+    final app = await TestApp.start(tester, voice: voice);
+    for (final (at, done) in [('/shapes/box', Strings.shapesDone), ('/shapes/inset?board=fruit', Strings.insetDone(lib.insets.first.zh))]) {
+      app.go(at);
+      await app.settle(2000);
+      await solve(app);
+      await app.settle(4000);
+      expect(voice.said.last, done, reason: at);
+      final last = voice.said[voice.said.length - 2];
+      expect(voice.cut, isNot(contains(last)), reason: '$at: 「$last」 was cut off');
+    }
+    await app.end();
+  });
+
+  testWidgets('a finger scrolling a list is not a tap on what it started on', (tester) async {
+    final app = await TestApp.start(tester);
+    app.go('/jigsaw/box?id=fruit');
+    await app.settle(900);
+    final card = find.bySemanticsLabel(lib.box['fruit']!.pictures[2].zh).last;
+    final before = tester.getCenter(card);
+    // A short swipe: the finger lifts still on the card it started on.
+    await tester.dragFrom(before, const Offset(0, -50));
+    await app.settle(600);
+    expect(before.dy - tester.getCenter(card).dy, greaterThan(20), reason: 'the list scrolled');
+    expect(app.location, '/jigsaw/box', reason: 'no picture opened');
+    await app.tapLabel(lib.box['fruit']!.pictures[2].zh);
+    expect(app.location, '/jigsaw/play', reason: 'a tap still opens it');
+    await app.end();
+  });
+
+  test('the speech engine starting up: the newest line is the one said', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const channel = MethodChannel('flutter_tts');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final spoken = <String>[];
+    final ready = Completer<void>();
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'awaitSpeakCompletion') await ready.future;
+      if (call.method == 'speak') spoken.add(call.arguments as String);
+      return 1;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    final v = SystemVoice();
+    final first = v.say(Strings.pickLine);
+    final second = v.say(Strings.hello(Helper.deer));
+    ready.complete();
+    await Future.wait([first, second]);
+    expect(spoken, [Strings.hello(Helper.deer)], reason: 'the older line is not said after the newer one');
+    await v.say(Strings.whatNow);
+    expect(spoken.last, Strings.whatNow);
+  });
+
+  testWidgets('switching the helper: the old one stays until another is picked; the new one is kept, voice and all', (tester) async {
+    final app = await TestApp.start(tester, game: const Game(helper: Helper.bear));
+    await app.tapLabel(Strings.change, ms: 900);
+    expect(app.location, '/helper');
+    expect(app.game.helper, Helper.bear);
+    app.now = app.now.add(const Duration(minutes: 16));
+    await app.settle(2600);
+    expect(app.location, '/rest');
+    expect(find.text(Helper.bear.sleeps), findsOneWidget, reason: 'the child\'s own helper sleeps its own way');
+    app.change((g) => g.playOn());
+    app.container.read(sessionStartProvider.notifier).restart();
+    app.go('/helper');
+    await app.settle(900);
+    await app.tapLabel(Helper.deer.zh, ms: 2600);
+    expect(app.location, '/');
+    expect(Game.fromJson(app.store.saved, lib).helper, Helper.deer);
+    expect(app.voice.pitches.last, Helper.deer.pitch);
+    await app.end();
+  });
+
+  testWidgets('大 照著拼 on a phone: a big stack\'s dots fit its narrow place in the tray', (tester) async {
+    final app = await TestApp.start(tester, game: const Game(helper: Helper.bear, settings: Settings(level: Level.big)));
+    app.go('/blocks/play?id=butterfly');
+    await app.settle(900);
+    final b = boardOf(tester);
+    expect(b.trayPieces.map((p) => p.kind), ['hex', 'trap', 'rhomb', 'tri'], reason: 'four stacks: four narrow places on a phone');
+    expect(find.byWidgetPredicate((w) => w is Semantics && w.properties.label == '還有 16 個'), findsOneWidget, reason: 'a triangle for every bit of the butterfly');
+    expect(tester.takeException(), isNull, reason: 'nothing overflows');
     await app.end();
   });
 }

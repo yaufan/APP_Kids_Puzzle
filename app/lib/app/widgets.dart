@@ -101,8 +101,12 @@ class Later {
 
 void sfx(WidgetRef ref, String name) => ref.read(soundsProvider).play(name);
 
+/// A finger that slides further than this is scrolling a list, not tapping.
+const tapSlop = 24.0;
+
 /// Shrinks a little while pressed and fires when the finger lifts on it
-/// (raw pointer events: a touch counts at once, no gesture to wait for).
+/// (raw pointer events: a touch counts at once, no gesture to wait for). A
+/// finger that slid along (scrolling the list it is in) is not a tap.
 class Pressable extends ConsumerStatefulWidget {
   const Pressable({super.key, required this.child, this.onTap, this.sound = 'tap'});
 
@@ -116,13 +120,22 @@ class Pressable extends ConsumerStatefulWidget {
 
 class _PressableState extends ConsumerState<Pressable> {
   int? _pointer;
+  Offset _from = Offset.zero;
 
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onTap != null;
     return Listener(
       behavior: HitTestBehavior.opaque,
-      onPointerDown: enabled && _pointer == null ? (e) => setState(() => _pointer = e.pointer) : null,
+      onPointerDown: enabled && _pointer == null
+          ? (e) => setState(() {
+                _pointer = e.pointer;
+                _from = e.position;
+              })
+          : null,
+      onPointerMove: (e) {
+        if (e.pointer == _pointer && (e.position - _from).distance > tapSlop) setState(() => _pointer = null);
+      },
       onPointerCancel: (e) {
         if (e.pointer == _pointer) setState(() => _pointer = null);
       },

@@ -104,10 +104,11 @@ class PuzzleApp extends ConsumerWidget {
 
 /// Keeps the parent's play time (docs/design.md 「每次玩多久」): when the sitting has gone on for
 /// the minutes they set, the puzzle being put together may be finished (at most two more
-/// minutes), then the workshop's lights go down and the helper sleeps; an hour later (or when a
-/// parent says so) play can go on. Away from the app for ten minutes counts as a rest; time in
-/// parent mode or with the app in the background is not the child's play time. It also counts
-/// today's minutes for parent mode.
+/// minutes, and its picture still comes alive), then the workshop's lights go down and the helper
+/// sleeps; an hour later (or when a parent says so) play can go on. Away from the app for ten
+/// minutes counts as a rest; time in parent mode or with the app in the background is not the
+/// child's play time, and a phone clock moved back gives no extra time. It also counts today's
+/// minutes for parent mode.
 class RestGuard extends ConsumerStatefulWidget {
   const RestGuard({super.key, required this.child});
 
@@ -136,6 +137,9 @@ class _RestGuardState extends ConsumerState<RestGuard> {
 
   /// When the time ran out while a puzzle was being put together.
   DateTime? _overSince;
+
+  /// The clock when last looked at (to see it moved back).
+  DateTime? _lastNow;
   var _unsaved = 0;
 
   @override
@@ -146,15 +150,47 @@ class _RestGuardState extends ConsumerState<RestGuard> {
     _life = AppLifecycleListener(
       onHide: () {
         _save();
-        _away = ref.read(clockProvider)();
+        _away = _now();
       },
       onShow: () {
+        final now = _now();
         final away = _away;
         _away = null;
-        if (away != null && ref.read(clockProvider)().difference(away) >= RestGuard.awayIsRest) ref.read(sessionStartProvider.notifier).restart();
+        if (away != null) {
+          final d = now.difference(away);
+          if (d >= RestGuard.awayIsRest) {
+            ref.read(sessionStartProvider.notifier).restart();
+            _overSince = null;
+          } else if (d > Duration.zero && _parentSince == null) {
+            // A few minutes in the background are not play: the sitting (and the two minutes to
+            // finish a puzzle) go on where they were. (In parent mode, leaving it gives all of
+            // its time back, this included.)
+            ref.read(sessionStartProvider.notifier).pause(d);
+            _overSince = _overSince?.add(d);
+          }
+        }
         _check();
       },
     );
+  }
+
+  /// Now. If the phone's clock was moved back since the last look (by hand, or set by the
+  /// network), every time kept here moves back with it: the child's minutes stay as they were and
+  /// the rest still lasts its hour.
+  DateTime _now() {
+    final now = ref.read(clockProvider)();
+    final last = _lastNow;
+    _lastNow = now;
+    if (last != null && now.isBefore(last)) {
+      final back = now.difference(last);
+      ref.read(sessionStartProvider.notifier).shift(back);
+      _away = _away?.add(back);
+      _parentSince = _parentSince?.add(back);
+      _overSince = _overSince?.add(back);
+      final rest = ref.read(gameProvider).restSince;
+      if (rest != null) ref.read(gameProvider.notifier).change((g) => g.copyWith(restSince: rest.add(back)));
+    }
+    return now;
   }
 
   @override
@@ -173,12 +209,14 @@ class _RestGuardState extends ConsumerState<RestGuard> {
 
   void _check() {
     if (!mounted) return;
-    final now = ref.read(clockProvider)();
+    final now = _now();
+    // Nothing while the app is out of sight (its timer can go on in the background): that time is
+    // given back when it comes back.
+    if (_away != null) return;
     final g = ref.read(gameProvider);
     final router = ref.read(routerProvider);
     final path = router.state.matchedLocation;
-    // Not while the app is out of sight (its timer can go on in the background).
-    final playing = _away == null && !path.startsWith('/parent') && path != '/rest' && path != '/helper';
+    final playing = !path.startsWith('/parent') && path != '/rest' && path != '/helper';
     if (playing) {
       _unsaved += RestGuard.check.inSeconds;
       if (_unsaved >= RestGuard.saveEvery) _save();
@@ -206,7 +244,9 @@ class _RestGuardState extends ConsumerState<RestGuard> {
     if (path == '/rest') return;
     if (now.difference(ref.read(sessionStartProvider)) >= Duration(minutes: g.settings.minutes)) {
       final over = _overSince ??= now;
-      if (ref.read(busyProvider) && now.difference(over) < RestGuard.finishUp) return;
+      final busy = ref.read(busyProvider.notifier);
+      // A puzzle just finished still comes alive (a few seconds), even after the two minutes.
+      if (busy.celebrating || (ref.read(busyProvider) && now.difference(over) < RestGuard.finishUp)) return;
       _overSince = null;
       _save();
       ref.read(gameProvider.notifier).change((g) => g.rest(now));

@@ -25,6 +25,33 @@ const blockColors = {
   'thin': Color(0xFFE8D2A6),
 };
 
+/// The blocks in the tray for [card]: 中 gets the card's own blocks. 大 (any way of filling the
+/// outline is right) also gets a few more of each block that fits another way, and a triangle for
+/// every bit of the outline a triangle fits: whatever was put down before, the rest can always be
+/// filled with triangles, so the board can never be left with holes no block in the tray fits.
+List<Piece> blockPieces(BlockCard card, Map<String, ShapeKind> kinds, {required bool fill}) {
+  final counts = <String, int>{};
+  for (final s in card.slots) {
+    counts[s.kind] = (counts[s.kind] ?? 0) + 1;
+  }
+  if (fill) {
+    // Enough of the small blocks to fill a hexagon or a trapezoid another way.
+    for (final k in {for (final s in card.extra) s.kind}) {
+      counts[k] = (counts[k] ?? 0) + (k == 'tri' ? 4 : 2);
+    }
+    final triCells = {
+      for (final s in [...card.slots, ...card.extra])
+        if (s.kind == 'tri') ...s.cells,
+    };
+    if (triCells.length > (counts['tri'] ?? 0)) counts['tri'] = triCells.length;
+  }
+  const order = ['hex', 'trap', 'rhomb', 'tri', 'square', 'thin'];
+  return [
+    for (final k in order)
+      for (var i = 0; i < (counts[k] ?? 0); i++) Piece(id: '$k$i', kind: k, size: shapeBox(kinds[k]!)),
+  ];
+}
+
 /// 照著拼 (docs/design.md, 中 and 大): the cards.
 class CardList extends ConsumerStatefulWidget {
   const CardList({super.key});
@@ -161,23 +188,7 @@ class _BlocksScreenState extends ConsumerState<BlocksScreen> with HushOnLeave {
     if (_fill)
       for (var i = 0; i < _c.extra.length; i++) _slot('x$i', _c.extra[i]),
   ], need: _c.cells);
-  late final List<Piece> _pieces = () {
-    final counts = <String, int>{};
-    for (final s in _c.slots) {
-      counts[s.kind] = (counts[s.kind] ?? 0) + 1;
-    }
-    if (_fill) {
-      // Enough of the small blocks to fill a hexagon or a trapezoid another way.
-      for (final k in {for (final s in _c.extra) s.kind}) {
-        counts[k] = (counts[k] ?? 0) + (k == 'tri' ? 4 : 2);
-      }
-    }
-    const order = ['hex', 'trap', 'rhomb', 'tri', 'square', 'thin'];
-    return [
-      for (final k in order)
-        for (var i = 0; i < (counts[k] ?? 0); i++) Piece(id: '$k$i', kind: k, size: shapeBox(_lib.blockKinds[k]!)),
-    ];
-  }();
+  late final List<Piece> _pieces = blockPieces(_c, _lib.blockKinds, fill: _fill);
   final _hint = ValueNotifier(0);
   late String _line = _fill ? Strings.blocksAskFill : Strings.blocksAsk;
   var _cheer = 0, _placed = 0;

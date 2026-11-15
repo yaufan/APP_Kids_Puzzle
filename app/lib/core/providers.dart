@@ -49,13 +49,16 @@ class SessionStart extends Notifier<DateTime> {
 
   void restart() => state = ref.read(clockProvider)();
 
-  /// Time [d] a parent spent in parent mode is not the child's: the sitting starts that much
-  /// later (never later than now).
+  /// Time [d] a parent spent in parent mode (or the app in the background) is not the child's:
+  /// the sitting starts that much later (never later than now).
   void pause(Duration d) {
     if (d.isNegative) return;
     final now = ref.read(clockProvider)(), later = state.add(d);
     state = later.isAfter(now) ? now : later;
   }
+
+  /// The phone's clock moved by [d]: the sitting's start moves with it.
+  void shift(Duration d) => state = state.add(d);
 }
 
 /// Whether a puzzle is being put together right now: when the play time runs out, it may be
@@ -63,11 +66,30 @@ class SessionStart extends Notifier<DateTime> {
 final busyProvider = NotifierProvider<Busy, bool>(Busy.new);
 
 class Busy extends Notifier<bool> {
+  Object? _owner;
+  var _celebrating = false;
+
   @override
   bool build() => false;
 
-  void set(bool v) {
-    if (ref.mounted && state != v) state = v;
+  /// Whether the puzzle on screen was just finished and its picture is coming alive (a few
+  /// seconds): the rest waits for it, even after the two minutes.
+  bool get celebrating => state && _celebrating;
+
+  /// [owner] (a puzzle's page) is being put together ([v]), or was just finished ([celebrating]).
+  /// A page going away never clears the busy of the page that came after it (再拼一次 and 下一張
+  /// put the new page up before the old one is gone).
+  void set(bool v, {Object? owner, bool celebrating = false}) {
+    if (!ref.mounted) return;
+    if (v) {
+      _owner = owner;
+      _celebrating = celebrating;
+    } else {
+      if (owner != null && _owner != null && !identical(owner, _owner)) return;
+      _owner = null;
+      _celebrating = false;
+    }
+    if (state != v) state = v;
   }
 }
 

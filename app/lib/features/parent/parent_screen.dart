@@ -165,10 +165,7 @@ class ParentScreen extends ConsumerWidget {
         section(Strings.otherTitle, [
           OutlinedButton.icon(
             key: const ValueKey('change-helper'),
-            onPressed: () {
-              game.change((g) => g.copyWith(clearHelper: true));
-              context.go('/helper');
-            },
+            onPressed: () => context.go('/helper'),
             icon: const Icon(Icons.pets_rounded),
             label: const Text(Strings.changeHelper),
           ),

@@ -84,7 +84,10 @@ class Settings {
       };
 
   /// A parent's choices kept sensible: at least one toy box and one jigsaw box that can be played.
-  static Set<Mode> tidyModes(Set<Mode> m) => m.isEmpty ? {Mode.shapes} : m;
+  /// 照著拼 alone is not enough at 小小 (it starts at 中) or in the free version (it is locked):
+  /// the shape box comes back, so the shelf is never empty.
+  static Set<Mode> tidyModes(Set<Mode> m, {Level level = Level.small, bool full = true}) =>
+      m.any((x) => x != Mode.blocks || (full && level != Level.small)) ? m : {...m, Mode.shapes};
 
   static Set<String> tidyBoxes(Set<String> b, {bool full = true}) {
     final out = {for (final x in b) if (allBoxes.contains(x)) x};
@@ -107,7 +110,7 @@ class Settings {
         music: music ?? this.music,
         sounds: sounds ?? this.sounds,
         full: full ?? this.full,
-        modes: tidyModes(modes ?? this.modes),
+        modes: tidyModes(modes ?? this.modes, level: level ?? this.level, full: full ?? this.full),
         boxes: tidyBoxes(boxes ?? this.boxes, full: full ?? this.full),
       );
 
@@ -133,8 +136,9 @@ class Settings {
     final m = j['minutes'], md = j['modes'], bx = j['boxes'];
     bool flag(String k, bool d) => j[k] is bool ? j[k] as bool : d;
     final full = flag('full', true);
+    final level = Level.values.asNameMap()[j['level']] ?? Level.small;
     return Settings(
-      level: Level.values.asNameMap()[j['level']] ?? Level.small,
+      level: level,
       minutes: m is int && minuteChoices.contains(m) ? m : 15,
       magnet: Magnet.values.asNameMap()[j['magnet']] ?? Magnet.normal,
       hints: flag('hints', true),
@@ -147,7 +151,7 @@ class Settings {
       music: flag('music', true),
       sounds: flag('sounds', true),
       full: full,
-      modes: md is List ? tidyModes({for (final n in md) ?Mode.values.asNameMap()[n]}) : const {Mode.shapes, Mode.jigsaw, Mode.tangram, Mode.blocks},
+      modes: md is List ? tidyModes({for (final n in md) ?Mode.values.asNameMap()[n]}, level: level, full: full) : const {Mode.shapes, Mode.jigsaw, Mode.tangram, Mode.blocks},
       boxes: bx is List ? tidyBoxes({for (final n in bx) if (n is String) n}, full: full) : allBoxes,
     );
   }
@@ -228,7 +232,8 @@ class Game {
   static const restLength = Duration(hours: 1);
 
   /// Resting for an hour after the time ran out. A clock moved back (now before the rest began)
-  /// does not lock the app: it counts as rested.
+  /// does not lock the app: it counts as rested. (While the app is open, RestGuard moves the rest
+  /// back with the clock, so moving the clock back does not end it early either.)
   bool resting(DateTime now) {
     final since = restSince;
     if (since == null) return false;

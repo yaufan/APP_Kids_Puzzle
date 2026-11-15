@@ -118,6 +118,10 @@ class _ShapeBoxScreenState extends ConsumerState<ShapeBoxScreen> with HushOnLeav
   var _cheer = 0, _placed = 0;
   var _done = false;
 
+  /// The line about the last shape put in (the done line waits for it).
+  Future<void>? _said;
+  Later? _later;
+
   @override
   void initState() {
     super.initState();
@@ -129,6 +133,7 @@ class _ShapeBoxScreenState extends ConsumerState<ShapeBoxScreen> with HushOnLeav
   @override
   void dispose() {
     _hint.dispose();
+    _later?.cancel();
     super.dispose();
   }
 
@@ -142,7 +147,7 @@ class _ShapeBoxScreenState extends ConsumerState<ShapeBoxScreen> with HushOnLeav
       _cheer++;
       if (say) _line = Strings.shapeIn(shape.look, shape.zh);
     });
-    if (say) speak(ref, _line);
+    _said = say ? speak(ref, _line) : null;
   }
 
   void _finish() {
@@ -153,7 +158,10 @@ class _ShapeBoxScreenState extends ConsumerState<ShapeBoxScreen> with HushOnLeav
       _done = true;
       _line = Strings.shapesDone;
     });
-    speak(ref, _line);
+    // Not over the last shape's line: after it.
+    _later = Later(Duration.zero, () {
+      if (mounted) speak(ref, Strings.shapesDone);
+    }, after: _said);
   }
 
   @override
@@ -251,6 +259,10 @@ class _InsetScreenState extends ConsumerState<InsetScreen> with HushOnLeave {
   var _cheer = 0, _placed = 0;
   var _done = false;
 
+  /// The line about the last piece put in (the done line waits for it).
+  Future<void>? _said;
+  Later? _later;
+
   @override
   void initState() {
     super.initState();
@@ -262,6 +274,7 @@ class _InsetScreenState extends ConsumerState<InsetScreen> with HushOnLeave {
   @override
   void dispose() {
     _hint.dispose();
+    _later?.cancel();
     super.dispose();
   }
 
@@ -276,18 +289,22 @@ class _InsetScreenState extends ConsumerState<InsetScreen> with HushOnLeave {
       _cheer++;
       _line = say ? item.line : item.zh;
     });
-    speak(ref, _line);
+    _said = speak(ref, _line);
   }
 
   void _finish() {
     final now = ref.read(clockProvider)();
     ref.read(gameProvider.notifier).change((g) => g.finishInset(_b.id, now));
     sfx(ref, 'done');
+    final line = Strings.insetDone(_b.zh);
     setState(() {
       _done = true;
-      _line = Strings.insetDone(_b.zh);
+      _line = line;
     });
-    speak(ref, _line);
+    // Not over the last piece's name: after it.
+    _later = Later(Duration.zero, () {
+      if (mounted) speak(ref, line);
+    }, after: _said);
   }
 
   @override

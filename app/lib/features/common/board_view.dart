@@ -103,7 +103,12 @@ class PuzzleBoardState extends ConsumerState<PuzzleBoard> {
     super.initState();
     _restartHint();
     widget.hint?.addListener(_showHint);
-    _life = AppLifecycleListener(onHide: _cancelHold);
+    // The app went away mid-drag: the piece goes back, and the finger is forgotten (its lift may
+    // never come), so the next touch can pick a piece.
+    _life = AppLifecycleListener(onHide: () {
+      _pointer = null;
+      _cancelHold();
+    });
   }
 
   @override
@@ -120,6 +125,9 @@ class PuzzleBoardState extends ConsumerState<PuzzleBoard> {
 
   /// The pieces still in the tray (tests and the screens look at them).
   List<Piece> get trayPieces => [for (final (_, p) in _tray.shown) p];
+
+  /// The places lit up now (tests).
+  Set<String> get glowing => {..._glow};
 
   void _sfx(String s) => ref.read(soundsProvider).play(s);
 
@@ -154,16 +162,24 @@ class PuzzleBoardState extends ConsumerState<PuzzleBoard> {
 
   void _showHint() {
     if (!mounted || _over) return;
-    final shown = _tray.shown;
-    if (shown.isEmpty) return;
-    final p = _selected ?? shown.first.$2;
-    final s = board.home(p);
-    if (s == null) return;
+    // The picked piece's place, or the first piece in the tray that still has one (照著拼 at 大:
+    // a stack can have blocks left that fit nowhere any more, while the next stack's do).
+    Piece? p;
+    Slot? s;
+    for (final q in [?_selected, for (final (_, q) in _tray.shown) q]) {
+      s = board.home(q);
+      if (s != null) {
+        p = q;
+        break;
+      }
+    }
+    final piece = p, place = s;
+    if (piece == null || place == null) return;
     setState(() {
       _glow
         ..clear()
-        ..add(s.id);
-      _hops[p.id] = (_hops[p.id] ?? 0) + 1;
+        ..add(place.id);
+      _hops[piece.id] = (_hops[piece.id] ?? 0) + 1;
     });
   }
 
@@ -214,7 +230,10 @@ class PuzzleBoardState extends ConsumerState<PuzzleBoard> {
 
   // ---------------------------------------------------------------- fingers
   void _down(PointerDownEvent e) {
-    if (_pointer != null || _over) return;
+    // Only the finger holding a piece counts: a second finger or a palm never takes it away. A
+    // finger or palm that touched first but holds nothing (resting on the board) does not stop
+    // the next finger from picking a piece; the newest such touch is the one followed.
+    if (_held != null || _over) return;
     final l = _layout;
     if (l == null) return;
     _pointer = e.pointer;
@@ -646,11 +665,17 @@ class _Dots extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
         label: '還有 $n 個',
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          for (var i = 0; i < math.min(n, 6); i++)
-            Container(width: 9, height: 9, margin: const EdgeInsets.symmetric(horizontal: 2), decoration: BoxDecoration(color: Wood.ink.withValues(alpha: .55), shape: BoxShape.circle)),
-          if (n > 6) const Text('…', style: TextStyle(fontSize: 12, color: Wood.ink)),
-        ]),
+        // Smaller rather than cut off in a narrow tray (six dots and "…" for a big stack).
+        child: Center(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              for (var i = 0; i < math.min(n, 6); i++)
+                Container(width: 9, height: 9, margin: const EdgeInsets.symmetric(horizontal: 2), decoration: BoxDecoration(color: Wood.ink.withValues(alpha: .55), shape: BoxShape.circle)),
+              if (n > 6) const Text('…', style: TextStyle(fontSize: 12, color: Wood.ink)),
+            ]),
+          ),
+        ),
       );
 }
 

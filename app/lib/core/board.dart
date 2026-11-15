@@ -93,20 +93,27 @@ class Board {
 
   /// The nearest free place for [p] within [radius] of [at] (the nearest wins when two are in
   /// reach, so two places never fight over a piece). With [checkTurn], the fit says whether the
-  /// piece is turned (and mirrored) the right way for it.
+  /// piece is turned (and mirrored) the right way for it; of two places of the same shape in
+  /// reach (the tangram's two big triangles), the one the piece is already turned right for wins.
   Fit? fit(Piece p, Offset at, double radius, {bool checkTurn = false}) {
-    Slot? best;
-    var bestD = double.infinity;
+    Slot? best, turned;
+    var bestD = double.infinity, turnedD = double.infinity;
     for (final s in slots) {
       if (s.kind != p.kind || !isFree(s)) continue;
       final d = (s.at - at).distance;
-      if (d <= radius && d < bestD) {
+      if (d > radius) continue;
+      if (d < bestD) {
         best = s;
         bestD = d;
       }
+      if (checkTurn && d < turnedD && sameTurn(p.angle, p.flip, s)) {
+        turned = s;
+        turnedD = d;
+      }
     }
+    if (turned != null) return Fit(turned);
     if (best == null) return null;
-    return Fit(best, turnedRight: !checkTurn || sameTurn(p.angle, p.flip, best));
+    return Fit(best, turnedRight: !checkTurn);
   }
 
   /// Whether a piece at [angle] (mirrored if [flip]) looks like the one [s] needs (within 10°).

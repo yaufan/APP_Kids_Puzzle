@@ -132,10 +132,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with HushOnLeave {
                       icon: Icons.swap_horiz_rounded,
                       size: 44,
                       color: Wood.paper,
-                      onTap: () {
-                        ref.read(gameProvider.notifier).change((g) => g.copyWith(clearHelper: true));
-                        context.go('/helper');
-                      },
+                      // The helper stays until another is picked (a rest that starts on the
+                      // picking screen still shows the child's own helper asleep).
+                      onTap: () => context.go('/helper'),
                     ),
                   ]),
                 ),
@@ -211,6 +210,7 @@ class _ParentLockState extends State<_ParentLock> with SingleTickerProviderState
       }
     });
   int? _pointer;
+  Offset _from = Offset.zero;
 
   @override
   void dispose() {
@@ -235,7 +235,12 @@ class _ParentLockState extends State<_ParentLock> with SingleTickerProviderState
           onPointerDown: (e) {
             if (_pointer != null) return;
             _pointer = e.pointer;
+            _from = e.position;
             _c.forward();
+          },
+          // Only a finger held still on the lock opens it (not one scrolling the workshop).
+          onPointerMove: (e) {
+            if (e.pointer == _pointer && (e.position - _from).distance > tapSlop) _stop();
           },
           onPointerUp: (e) {
             if (e.pointer == _pointer) _stop();

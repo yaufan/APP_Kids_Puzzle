@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:puzzle_workshop/app/strings.dart';
 import 'package:puzzle_workshop/core/content.dart';
 import 'package:puzzle_workshop/core/game.dart';
+import 'package:puzzle_workshop/features/common/play_page.dart';
 import 'package:puzzle_workshop/features/parent/parent_gate.dart';
 
 import 'helpers.dart';
@@ -74,6 +75,25 @@ void main() {
     await app.end();
   });
 
+  testWidgets('only a finger held still on the lock opens the gate: not a long press elsewhere, not a slide', (tester) async {
+    final app = await TestApp.start(tester);
+    await hold(app, find.bySemanticsLabel('小幫手'), 1500);
+    await hold(app, find.byType(TaiwanView), 1500);
+    await app.settle(600);
+    expect(find.textContaining('加'), findsNothing, reason: 'a long press elsewhere');
+    final g = await tester.startGesture(tester.getCenter(find.bySemanticsLabel(Strings.parent)));
+    await tester.pump(const Duration(milliseconds: 300));
+    await g.moveBy(const Offset(0, 60));
+    for (var t = 0; t < 1200; t += 100) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await g.up();
+    await app.settle(600);
+    expect(find.textContaining('加'), findsNothing, reason: 'a finger sliding off the lock (scrolling the workshop)');
+    expect(app.location, '/');
+    await app.end();
+  });
+
   testWidgets('without a helper the child picks one first', (tester) async {
     final app = await TestApp.start(tester, game: const Game());
     expect(app.location, '/helper');
@@ -105,14 +125,17 @@ void main() {
     await app.end();
   });
 
-  testWidgets('the rest ends after an hour, and a clock moved back does not lock the app', (tester) async {
+  testWidgets('the rest ends after an hour; a clock moved back neither ends it early nor locks the app', (tester) async {
     final app = await TestApp.start(tester);
     app.change((g) => g.rest(app.now));
     await app.settle(2600);
     expect(app.location, '/rest');
     app.now = app.now.subtract(const Duration(hours: 3));
     await app.settle(2600);
-    expect(app.location, '/', reason: 'the clock went back: counts as rested');
+    expect(app.location, '/rest', reason: 'the clock went back: the rest goes on, no extra play');
+    app.now = app.now.add(const Duration(minutes: 61));
+    await app.settle(2600);
+    expect(app.location, '/', reason: 'it ends an hour after it began, not three hours later');
     expect(app.game.restSince, isNull);
     await app.end();
   });

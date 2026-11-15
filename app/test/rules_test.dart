@@ -7,6 +7,7 @@ import 'package:puzzle_workshop/core/content.dart';
 import 'package:puzzle_workshop/core/game.dart';
 import 'package:puzzle_workshop/core/jigsaw.dart';
 import 'package:puzzle_workshop/core/shapes.dart';
+import 'package:puzzle_workshop/features/blocks/blocks_screen.dart';
 
 import 'helpers.dart';
 
@@ -162,6 +163,45 @@ void main() {
       expect(b.fit(p, Offset.zero, 1)!.turnedRight, isTrue, reason: '中: pieces turn themselves');
     });
 
+    test('two places of the same shape in reach (大): the one the piece is turned right for wins', () {
+      final b = Board([slot('a', 'L', Offset.zero), slot('b', 'L', const Offset(40, 0), angle: 180)]);
+      final p = Piece(id: 'p', kind: 'L', size: Size.zero, angle: 180);
+      final f = b.fit(p, const Offset(15, 0), 50, checkTurn: true)!;
+      expect(f.slot.id, 'b', reason: 'not the nearer place it is turned wrong for');
+      expect(f.turnedRight, isTrue);
+      final q = Piece(id: 'q', kind: 'L', size: Size.zero, angle: 90);
+      final g = b.fit(q, const Offset(15, 0), 50, checkTurn: true)!;
+      expect((g.slot.id, g.turnedRight), ('a', false), reason: 'turned right for neither: the nearest shows how to turn it');
+      expect(b.fit(p, const Offset(15, 0), 50)!.slot.id, 'a', reason: '中: the nearest, it turns itself');
+    });
+
+    test('照著拼 at 大: whatever blocks go wherever, the outline can always be finished', () {
+      for (var n = 0; n < lib.cards.length; n++) {
+        final c = lib.cards[n];
+        final r = math.Random(n);
+        for (var round = 0; round < 150; round++) {
+          final board = Board([
+            for (final s in [...c.slots, ...c.extra]) Slot(id: '${s.kind}@${s.cells.join('|')}', kind: s.kind, at: s.at, cells: s.cells),
+          ], need: c.cells);
+          final tray = Tray(blockPieces(c, lib.blockKinds, fill: true), stacks: true);
+          while (!board.done) {
+            final moves = [
+              for (final (_, p) in tray.shown)
+                for (final s in board.slots)
+                  if (s.kind == p.kind && board.isFree(s)) (p, s),
+            ];
+            expect(moves, isNotEmpty, reason: '${c.id}: stuck with ${board.left} bits left and ${[for (final (_, p) in tray.shown) p.kind]} in the tray');
+            if (moves.isEmpty) break;
+            final (p, s) = moves[r.nextInt(moves.length)];
+            board.place(p, s);
+            tray.take(p);
+          }
+        }
+        final middle = blockPieces(c, lib.blockKinds, fill: false);
+        expect(middle.length, c.slots.length, reason: '${c.id}: 中 gets the card\'s own blocks');
+      }
+    });
+
     test('the tray: six at a time, the next one coming into the place of the one put down', () {
       final pieces = [for (var i = 0; i < 9; i++) Piece(id: '$i', kind: 'k$i', size: Size.zero)];
       final t = Tray(pieces);
@@ -280,6 +320,15 @@ void main() {
       expect(Settings.tidyBoxes({'night', 'city'}, full: false), {'night', 'city', 'fruit'}, reason: 'one that can be played comes back, the others stay as they were');
       expect(Settings.tidyBoxes({'night'}), {'night'});
       expect(const Settings(level: Level.small).shows(Mode.blocks), isFalse, reason: '照著拼 starts at 中');
+    });
+
+    test('the shelf is never empty: 照著拼 alone at 小小 or in the free version brings the shape box back', () {
+      final s = const Settings(level: Level.big).copyWith(modes: {Mode.blocks});
+      expect(s.modes, {Mode.blocks});
+      for (final t in [s.copyWith(level: Level.small), s.copyWith(full: false), Settings.fromJson({'level': 'small', 'modes': ['blocks']})]) {
+        expect([for (final m in Mode.values) if (t.shows(m) && t.open(m)) m], isNotEmpty);
+        expect(t.modes, containsAll({Mode.blocks, Mode.shapes}), reason: 'the parent\'s choice stays; the shape box joins it');
+      }
     });
 
     test('today\'s minutes start again after midnight without spoiling yesterday\'s', () {
