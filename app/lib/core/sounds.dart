@@ -74,18 +74,19 @@ class SilentSounds implements Sounds {
   void release(Object owner) {}
 }
 
-/// Remembers the sounds played (tests).
+/// Remembers the sounds played, and whether music and effects are on (tests).
 class RecordingSounds implements Sounds {
   final played = <String>[];
   final _holders = MusicHolders();
+  var musicOn = true, effectsOn = true;
 
   Music? get music => _holders.current;
 
   @override
-  set music(bool on) {}
+  set music(bool on) => musicOn = on;
 
   @override
-  set effects(bool on) {}
+  set effects(bool on) => effectsOn = on;
 
   @override
   void play(String sfx) => played.add(sfx);
