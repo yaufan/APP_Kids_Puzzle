@@ -78,5 +78,5 @@
   - 其他：家長只留「照著拼」又換成小小（或免費版）時，架子不會空掉（形狀洞洞會回來）；換小幫手時，還沒選新的之前舊的還在（休息畫面睡的是自己的小幫手）。
   - 示範影片沒有重做（只有大的照著拼托盤上三角形的點點多了「…」）。
 - GitHub 專案 2026-11-15 建好了，工作分支已推上去；照 skill `release-kids-app` 問使用者能不能推 `main`（第一次推 main 會跑 App 和 Release；Secrets 要先放好）。
-- 名稱「拼拼樂工坊」還在跟使用者確認（他打的是「拚拚樂工坊」）；要改的話改 `Strings.appName`、`AndroidManifest.xml`、`Info.plist`、`CHANGELOG.md` 和 README。
+- 名稱用「拼拼樂工坊」（拼圖的「拼」），使用者 2026-11-16 確認；要改的話改 `Strings.appName`、`AndroidManifest.xml`、`Info.plist`、`CHANGELOG.md` 和 README。
 - 還沒在真手機上試過：拖拉的手感和磁鐵的強弱、24 塊在小手機上好不好拿、平行四邊形的「翻」按鈕、每隻小幫手的語音高低、TTS 念的話、聲音好不好聽（做的時候沒辦法用耳朵聽）、音樂的大小、休息時正在拼的可以拼完。
