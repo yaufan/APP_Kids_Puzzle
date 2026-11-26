@@ -2,7 +2,12 @@
     <application
         android:label="拼拼樂工坊"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
+        <!-- Nothing is backed up or moved to another phone: what the child
+             played stays on this phone only. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -42,6 +47,11 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- The phone's speech engine (Android 11 and later only shows it to
+             apps that ask for it here). -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>
     </queries>
 </manifest>
