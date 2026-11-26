@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 /// Reads things out for children who cannot read yet, in Taiwanese Mandarin, a little higher or
@@ -9,6 +10,20 @@ abstract interface class Voice {
 }
 
 class SystemVoice implements Voice {
+  /// Quiet while the app is out of sight: what was being said stops, and nothing new is said
+  /// until it is back.
+  SystemVoice() {
+    _life = AppLifecycleListener(
+      onHide: () {
+        _hidden = true;
+        stop();
+      },
+      onShow: () => _hidden = false,
+    );
+  }
+
+  late final AppLifecycleListener _life;
+  var _hidden = false;
   Future<FlutterTts>? _ready;
   double? _rate, _pitch;
 
@@ -32,6 +47,7 @@ class SystemVoice implements Voice {
   @override
   Future<void> say(String zh, {bool slow = false, double pitch = 1.15}) async {
     final turn = ++_turn;
+    if (_hidden) return;
     try {
       final tts = await _engine();
       if (turn != _turn) return;
@@ -46,13 +62,15 @@ class SystemVoice implements Voice {
         _pitch = pitch;
         await tts.setPitch(pitch);
       }
-      if (turn != _turn) return;
+      if (turn != _turn || _hidden) return;
       if (zh.isNotEmpty) await tts.speak(zh);
     } catch (_) {
       // No speech engine (tests, or a phone without one): the pictures and the words on screen
       // are enough.
     }
   }
+
+  void dispose() => _life.dispose();
 
   @override
   Future<void> stop() async {

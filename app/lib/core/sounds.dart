@@ -98,21 +98,49 @@ class RecordingSounds implements Sounds {
   void release(Object owner) => _holders.release(owner);
 }
 
+/// How every sound plays: on Android the media stream (the media volume,
+/// heard with the phone on vibrate or silent like the voice), never taking
+/// the audio focus, so sounds never stop one another or the voice; on
+/// iPhone a mixing 「ambient」 session as before.
+final soundContext = AudioContext(
+  android: const AudioContextAndroid(
+    usageType: AndroidUsageType.media,
+    contentType: AndroidContentType.music,
+    audioFocus: AndroidAudioFocus.none,
+  ),
+  iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
+);
+
+/// The player the music loops on (a slow stand-in in the tests).
+abstract interface class MusicLoop {
+  Future<void> stop();
+  Future<void> play(String file, double volume);
+}
+
 /// Plays through audioplayers: a pool per sound, one looping player for the
 /// music; quiet while the app is in the background.
 class SystemSounds implements Sounds {
-  SystemSounds() {
+  SystemSounds({MusicLoop? loop}) {
+    _loop = loop ?? _PlayerLoop(_ready);
     _lifecycle = AppLifecycleListener(onHide: () => _setAway(true), onShow: () => _setAway(false));
   }
 
   static const _sfxVolume = 0.85, _musicVolume = 0.35, _quietVolume = 0.2;
 
   late final AppLifecycleListener _lifecycle;
+  late final MusicLoop _loop;
   final _pools = <String, Future<AudioPool>>{};
   final _holders = MusicHolders();
   Future<void>? _setUp;
-  AudioPlayer? _loop;
-  Music? _playing;
+
+  /// The music wanted now, and the music the loop was last started with.
+  Music? _playing, _sounding;
+
+  /// Switches of the music, one after the other: a stop asked for while a
+  /// start is still loading waits for it, so the wrong tune never plays and
+  /// the music never starts after it was stopped (menus tapped through quickly,
+  /// the app hidden).
+  Future<void> _switching = Future.value();
   var _music = true, _effects = true, _away = false;
 
   @override
@@ -129,9 +157,7 @@ class SystemSounds implements Sounds {
     _update();
   }
 
-  Future<void> _ready() => _setUp ??= AudioPlayer.global.setAudioContext(
-        AudioContextConfig(focus: AudioContextConfigFocus.mixWithOthers, respectSilence: true).build(),
-      );
+  Future<void> _ready() => _setUp ??= AudioPlayer.global.setAudioContext(soundContext);
 
   @override
   void play(String sfx) {
@@ -142,7 +168,7 @@ class SystemSounds implements Sounds {
   Future<void> _play(String sfx) async {
     try {
       await _ready();
-      final pool = await (_pools[sfx] ??= AudioPool.createFromAsset(path: 'sounds/$sfx.wav', maxPlayers: 4));
+      final pool = await (_pools[sfx] ??= AudioPool.create(source: AssetSource('sounds/$sfx.wav'), maxPlayers: 4, audioContext: soundContext));
       await pool.start(volume: _sfxVolume);
     } catch (_) {
       _pools.remove(sfx);
@@ -165,26 +191,57 @@ class SystemSounds implements Sounds {
     final wanted = !_music || _away ? null : _holders.current;
     if (wanted == _playing) return;
     _playing = wanted;
-    unawaited(_switchTo(wanted));
+    _switching = _switching.then((_) => _apply());
   }
 
-  Future<void> _switchTo(Music? music) async {
+  /// Makes the loop play what is wanted now (a later wish queues another).
+  Future<void> _apply() async {
+    final music = _playing;
+    if (music == _sounding) return;
     try {
-      await _ready();
-      var loop = _loop;
-      if (loop == null) {
-        loop = _loop = AudioPlayer();
-        await loop.setReleaseMode(ReleaseMode.loop);
-      }
-      await loop.stop();
-      if (music == null || music != _playing) return;
-      await loop.setVolume(music.quiet ? _quietVolume : _musicVolume);
-      await loop.play(AssetSource('sounds/${music.file}.wav'));
-    } catch (_) {}
+      await _loop.stop();
+      _sounding = null;
+      if (music == null) return;
+      await _loop.play(music.file, music.quiet ? _quietVolume : _musicVolume);
+      _sounding = music;
+    } catch (_) {
+      _sounding = null;
+    }
   }
 
   void dispose() {
     _lifecycle.dispose();
-    unawaited(_loop?.dispose());
+    final loop = _loop;
+    if (loop is _PlayerLoop) loop.dispose();
   }
+}
+
+class _PlayerLoop implements MusicLoop {
+  _PlayerLoop(this._ready);
+
+  final Future<void> Function() _ready;
+  AudioPlayer? _player;
+
+  Future<AudioPlayer> _get() async {
+    await _ready();
+    var p = _player;
+    if (p == null) {
+      p = _player = AudioPlayer();
+      await p.setAudioContext(soundContext);
+      await p.setReleaseMode(ReleaseMode.loop);
+    }
+    return p;
+  }
+
+  @override
+  Future<void> stop() async => (await _get()).stop();
+
+  @override
+  Future<void> play(String file, double volume) async {
+    final p = await _get();
+    await p.setVolume(volume);
+    await p.play(AssetSource('sounds/$file.wav'));
+  }
+
+  void dispose() => unawaited(_player?.dispose());
 }
