@@ -2,10 +2,13 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/strings.dart';
 import '../../app/theme.dart';
 import '../../app/widgets.dart';
+import '../../core/game.dart';
+import '../../core/providers.dart';
 
 /// A question a grown-up answers easily but a 2 to 5 year old cannot read:
 /// the numbers are written out in Chinese characters (as in the sibling apps).
@@ -29,12 +32,13 @@ class ParentGateChallenge {
   bool check(String typed) => int.tryParse(typed.trim()) == answer;
 }
 
-/// Completes with true only for a right answer.
-Future<bool> showParentGate(BuildContext context) async {
+/// Completes with true only for a right answer. [pass]: the answer also
+/// opens parent mode once (the rest's 「請爸爸媽媽解開」 only lets play go on).
+Future<bool> showParentGate(BuildContext context, {bool pass = true}) async {
   final ok = await Navigator.of(context).push<bool>(
     MaterialPageRoute(fullscreenDialog: true, builder: (_) => const ParentGatePage()),
   );
-  if (ok ?? false) ParentPass.grant();
+  if ((ok ?? false) && pass) ParentPass.grant();
   return ok ?? false;
 }
 
@@ -53,50 +57,109 @@ abstract final class ParentPass {
   }
 }
 
-/// Full screen, so a child cannot tap past it. Three wrong answers in a row
-/// and it waits a minute.
-class ParentGatePage extends StatefulWidget {
-  const ParentGatePage({super.key, this.random});
+/// How many parent gates are on screen (their time is not the child's play
+/// time either).
+final parentGateShowing = ValueNotifier<int>(0);
 
-  final math.Random? random;
+/// Closes a parent page by itself after [after] without a touch: a parent
+/// called away must not leave the gate or parent mode open for a child.
+class ParentIdle extends StatefulWidget {
+  const ParentIdle({super.key, required this.onIdle, required this.child});
 
-  static const maxMisses = 3;
-  static const lockout = Duration(minutes: 1);
+  static const after = Duration(minutes: 5);
 
-  static int _misses = 0;
-  static DateTime? _lockedUntil;
+  final VoidCallback onIdle;
+  final Widget child;
 
   @override
-  State<ParentGatePage> createState() => _ParentGatePageState();
+  State<ParentIdle> createState() => _ParentIdleState();
 }
 
-class _ParentGatePageState extends State<ParentGatePage> {
-  late var _challenge = ParentGateChallenge.random(widget.random);
-  var _typed = '';
-  var _wrong = false;
-  Timer? _tick;
+class _ParentIdleState extends State<ParentIdle> {
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_locked && mounted) setState(() {});
+    _touched();
+  }
+
+  void _touched() {
+    _timer?.cancel();
+    _timer = Timer(ParentIdle.after, () {
+      if (mounted) widget.onIdle();
     });
   }
 
   @override
   void dispose() {
-    _tick?.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
-  bool get _locked {
-    final until = ParentGatePage._lockedUntil;
-    return until != null && DateTime.now().isBefore(until);
+  @override
+  Widget build(BuildContext context) => Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) => _touched(),
+        onPointerMove: (_) => _touched(),
+        child: widget.child,
+      );
+}
+
+/// Full screen, so a child cannot tap past it. Three wrong answers in a row
+/// and it waits a minute, then 5, then 15 ([GateLock], kept on the phone so
+/// closing the app does not end the wait). It closes by itself when the app
+/// goes out of sight, and after five minutes without a touch.
+class ParentGatePage extends ConsumerStatefulWidget {
+  const ParentGatePage({super.key, this.random});
+
+  final math.Random? random;
+
+  @override
+  ConsumerState<ParentGatePage> createState() => _ParentGatePageState();
+}
+
+class _ParentGatePageState extends ConsumerState<ParentGatePage> {
+  late var _challenge = ParentGateChallenge.random(widget.random);
+  var _typed = '';
+  var _wrong = false;
+  var _closed = false;
+  Timer? _tick;
+  AppLifecycleListener? _life;
+
+  DateTime get _now => ref.read(clockProvider)();
+
+  GateLock get _lock => ref.read(gameProvider).gate;
+
+  @override
+  void initState() {
+    super.initState();
+    parentGateShowing.value++;
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+    _life = AppLifecycleListener(onHide: _close);
   }
 
+  @override
+  void dispose() {
+    _tick?.cancel();
+    _life?.dispose();
+    parentGateShowing.value--;
+    super.dispose();
+  }
+
+  /// Out of sight, or left alone: the gate closes unanswered.
+  void _close([bool ok = false]) {
+    if (_closed || !mounted) return;
+    _closed = true;
+    Navigator.of(context).pop(ok);
+  }
+
+  bool get _locked => _lock.locked(_now);
+
   void _key(String k) {
-    if (_locked) return;
+    if (_locked || _closed) return;
     setState(() {
       _wrong = false;
       if (k == '⌫') {
@@ -107,26 +170,25 @@ class _ParentGatePageState extends State<ParentGatePage> {
       _typed += k;
     });
     if (_typed.length < '${_challenge.answer}'.length) return;
+    final game = ref.read(gameProvider.notifier);
     if (_challenge.check(_typed)) {
-      ParentGatePage._misses = 0;
-      Navigator.of(context).pop(true);
+      game.change((g) => g.copyWith(gate: const GateLock()));
+      _close(true);
       return;
     }
+    final now = _now;
+    game.change((g) => g.copyWith(gate: g.gate.miss(now)));
     setState(() {
       _wrong = true;
       _typed = '';
       _challenge = ParentGateChallenge.random(widget.random);
-      if (++ParentGatePage._misses >= ParentGatePage.maxMisses) {
-        ParentGatePage._misses = 0;
-        ParentGatePage._lockedUntil = DateTime.now().add(ParentGatePage.lockout);
-      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final locked = _locked;
-    final wait = locked ? ParentGatePage._lockedUntil!.difference(DateTime.now()).inSeconds + 1 : 0;
+    final wait = locked ? _lock.left(_now).inSeconds + 1 : 0;
     final need = '${_challenge.answer}'.length;
     Widget box(int i) => Container(
           width: 60,
@@ -152,7 +214,9 @@ class _ParentGatePageState extends State<ParentGatePage> {
             ),
           ),
         );
-    return Scaffold(
+    return ParentIdle(
+      onIdle: _close,
+      child: Scaffold(
       backgroundColor: Wood.parentBg,
       body: SafeArea(
         child: Center(
@@ -168,7 +232,7 @@ class _ParentGatePageState extends State<ParentGatePage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                RoundButton(label: Strings.cancel, icon: Icons.close_rounded, onTap: () => Navigator.of(context).pop(false)),
+                RoundButton(label: Strings.cancel, icon: Icons.close_rounded, onTap: _close),
               ]),
               const SizedBox(height: 18),
               Container(
@@ -207,6 +271,7 @@ class _ParentGatePageState extends State<ParentGatePage> {
           ),
         ),
       ),
+    ),
     );
   }
 }

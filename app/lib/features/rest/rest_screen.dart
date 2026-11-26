@@ -35,7 +35,7 @@ class _RestScreenState extends ConsumerState<RestScreen> with HushOnLeave {
   }
 
   Future<void> _parent() async {
-    if (!await showParentGate(context) || !mounted) return;
+    if (!await showParentGate(context, pass: false) || !mounted) return;
     ref.read(gameProvider.notifier).change((g) => g.playOn());
     ref.read(sessionStartProvider.notifier).restart();
     context.go('/');

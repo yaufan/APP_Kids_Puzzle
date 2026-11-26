@@ -101,6 +101,26 @@ class Later {
 
 void sfx(WidgetRef ref, String name) => ref.read(soundsProvider).play(name);
 
+/// The phone's back key (or back gesture) never closes the app, which would
+/// lose the puzzle: it does what the screen's own home button does
+/// ([onBack]), or nothing at all in the workshop and at the rest. A screen's
+/// [TopBar] does the same with its home button.
+class BackKey extends StatelessWidget {
+  const BackKey({super.key, this.onBack, required this.child});
+
+  final VoidCallback? onBack;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) onBack?.call();
+        },
+        child: child,
+      );
+}
+
 /// A finger that slides further than this is scrolling a list, not tapping.
 const tapSlop = 24.0;
 
@@ -532,7 +552,8 @@ class HelperSays extends StatelessWidget {
   }
 }
 
-/// The bar at the top of a screen: home, the title on a wooden sign, a hint button.
+/// The bar at the top of a screen: home, the title on a wooden sign, a hint button. The phone's
+/// back key does what its home button does.
 class TopBar extends StatelessWidget {
   const TopBar({super.key, required this.title, this.onHome, this.onHint, this.trailing});
 
@@ -542,7 +563,9 @@ class TopBar extends StatelessWidget {
   final Widget? trailing;
 
   @override
-  Widget build(BuildContext context) => Padding(
+  Widget build(BuildContext context) => BackKey(
+        onBack: onHome,
+        child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
         child: Row(children: [
           onHome == null ? const SizedBox(width: 48) : RoundButton(label: Strings.home, icon: Icons.home_rounded, onTap: onHome, size: 48, color: Wood.teal),
@@ -559,6 +582,7 @@ class TopBar extends StatelessWidget {
           const SizedBox(width: 8),
           trailing ?? (onHint == null ? const SizedBox(width: 48) : RoundButton(label: Strings.help, icon: Icons.pets_rounded, onTap: onHint, size: 48, color: Wood.orange, sound: null)),
         ]),
+      ),
       );
 }
 

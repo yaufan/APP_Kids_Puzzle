@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'board.dart';
 import 'content.dart';
 import 'game.dart';
 import 'sounds.dart';
@@ -40,12 +41,16 @@ class GameNotifier extends Notifier<Game> {
   void settings(Settings Function(Settings s) f) => change((g) => g.withSettings(f(g.settings)));
 }
 
-/// When this sitting started (reset when a parent lets play go on).
+/// When this sitting started (reset when a parent lets play go on). The app closed and opened
+/// again within ten minutes goes on with the sitting it saved ([Sitting]).
 final sessionStartProvider = NotifierProvider<SessionStart, DateTime>(SessionStart.new);
 
 class SessionStart extends Notifier<DateTime> {
   @override
-  DateTime build() => ref.read(clockProvider)();
+  DateTime build() {
+    final now = ref.read(clockProvider)();
+    return ref.read(gameProvider).sitting?.startAt(now) ?? now;
+  }
 
   void restart() => state = ref.read(clockProvider)();
 
@@ -92,6 +97,19 @@ class Busy extends Notifier<bool> {
     if (state != v) state = v;
   }
 }
+
+/// A puzzle left before it was finished (the home button, the phone's back key, the rest): the
+/// pieces on the board and the order of the rest.
+class Kept {
+  const Kept(this.board, this.pieces);
+
+  final Board board;
+  final List<Piece> pieces;
+}
+
+/// The puzzles left half done (by picture and size, tangram figure, pattern-block card), so the
+/// child finds the pieces where they were on coming back (until the app is closed).
+final keptProvider = Provider<Map<String, Kept>>((ref) => <String, Kept>{});
 
 /// Things said only once per app start (the welcome).
 final onceProvider = Provider<Set<String>>((ref) => <String>{});

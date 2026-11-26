@@ -125,7 +125,7 @@ abstract final class Strings {
   static String gateQuestion(String a, String b) => '$a加$b等於多少？';
   static const gateRules = '用下面的數字回答';
   static const wrongAnswer = '不對喔，換一題';
-  static String gateWait(int s) => '答錯三次，請等 $s 秒';
+  static String gateWait(int s) => s > 60 ? '答錯三次，請等 ${(s + 59) ~/ 60} 分鐘' : '答錯三次，請等 $s 秒';
 
   // ---- parent mode
   static const parentTitle = '家長模式';
@@ -134,7 +134,7 @@ abstract final class Strings {
   static const levelNote = '小小：形狀洞洞、拼圖 2～4 塊、七巧板 2～3 塊（不用轉）。\n中：拼圖到 12 塊、七巧板 4～5 塊（放近了自己轉正）、照著拼有線。\n大：拼圖 9～24 塊、七巧板 7 塊（點一下轉）、照著拼只有外框。';
   static const playTime = '每次玩多久';
   static String minutes(int m) => '$m 分鐘';
-  static const playTimeNote = '時間到了，正在拼的那張可以拼完（最多再 2 分鐘），然後休息一小時，或由家長解開。家長模式和 APP 在背景的時間不算。';
+  static const playTimeNote = '時間到了，正在拼的那張可以拼完（最多再 2 分鐘），然後休息一小時，或由家長解開。家長模式、家長關卡和 APP 在背景的時間不算；APP 關掉 10 分鐘內再打開會接著算。';
   static const resting = '現在是休息時間。';
   static const playOn = '讓小朋友繼續玩';
   static const turnTitle = '轉動和翻面';

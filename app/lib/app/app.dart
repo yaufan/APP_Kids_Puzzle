@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/content.dart';
+import '../core/game.dart';
 import '../core/jigsaw.dart';
 import '../core/providers.dart';
 import '../features/blocks/blocks_screen.dart';
@@ -20,6 +21,7 @@ import '../features/shapes/shapes_screen.dart';
 import '../features/tangram/tangram_screen.dart';
 import 'strings.dart';
 import 'theme.dart';
+import 'widgets.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final resting = ref.read(gameProvider).resting(ref.read(clockProvider)());
@@ -58,22 +60,40 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (at == '/taiwan' && !g.pictureDone(q['pic'] ?? '')) return '/';
       return null;
     },
+    // The phone's back key never closes the app: a screen's top bar makes it do what its home
+    // button does; in the workshop and at the rest it does nothing.
     routes: [
-      GoRoute(path: '/', builder: (_, _) => const HomeScreen()),
-      GoRoute(path: '/helper', builder: (_, _) => const HelperScreen()),
-      GoRoute(path: '/shapes', builder: (_, _) => const ShapesMenu()),
-      GoRoute(path: '/shapes/box', builder: (_, s) => ShapeBoxScreen(key: ValueKey(s.uri.toString()), round: int.tryParse(s.uri.queryParameters['again'] ?? '')?.clamp(0, 5))),
-      GoRoute(path: '/shapes/inset', builder: (_, s) => InsetScreen(key: ValueKey(s.uri.toString()), boardId: s.uri.queryParameters['board']!)),
-      GoRoute(path: '/jigsaw', builder: (_, _) => const BoxList()),
-      GoRoute(path: '/jigsaw/box', builder: (_, s) => PictureList(key: ValueKey(s.uri.toString()), boxId: s.uri.queryParameters['id']!)),
-      GoRoute(path: '/jigsaw/play', builder: (_, s) => JigsawScreen(key: ValueKey(s.uri.toString()), pictureId: s.uri.queryParameters['pic']!, cut: Cut.values.byName(s.uri.queryParameters['cut']!))),
-      GoRoute(path: '/taiwan', builder: (_, s) => AliveScreen(key: ValueKey(s.uri.toString()), pictureId: s.uri.queryParameters['pic']!)),
-      GoRoute(path: '/tangram', builder: (_, _) => const TangramList()),
-      GoRoute(path: '/tangram/play', builder: (_, s) => TangramScreen(key: ValueKey(s.uri.toString()), figureId: s.uri.queryParameters['id']!)),
-      GoRoute(path: '/blocks', builder: (_, _) => const CardList()),
-      GoRoute(path: '/blocks/play', builder: (_, s) => BlocksScreen(key: ValueKey(s.uri.toString()), cardId: s.uri.queryParameters['id']!)),
-      GoRoute(path: '/rest', builder: (_, _) => const RestScreen()),
-      GoRoute(path: '/parent', builder: (_, _) => const ParentScreen()),
+      GoRoute(path: '/', builder: (_, _) => const BackKey(child: HomeScreen())),
+      // The first time there is no going back from picking a helper.
+      GoRoute(
+        path: '/helper',
+        builder: (context, _) => BackKey(
+          onBack: () {
+            if (ref.read(gameProvider).helper != null) GoRouter.of(context).go('/');
+          },
+          child: const HelperScreen(),
+        ),
+      ),
+      GoRoute(path: '/shapes', builder: (_, _) => const BackKey(child: ShapesMenu())),
+      GoRoute(path: '/shapes/box', builder: (_, s) => BackKey(child: ShapeBoxScreen(key: ValueKey(s.uri.toString()), round: int.tryParse(s.uri.queryParameters['again'] ?? '')?.clamp(0, 5)))),
+      GoRoute(path: '/shapes/inset', builder: (_, s) => BackKey(child: InsetScreen(key: ValueKey(s.uri.toString()), boardId: s.uri.queryParameters['board']!))),
+      GoRoute(path: '/jigsaw', builder: (_, _) => const BackKey(child: BoxList())),
+      GoRoute(path: '/jigsaw/box', builder: (_, s) => BackKey(child: PictureList(key: ValueKey(s.uri.toString()), boxId: s.uri.queryParameters['id']!))),
+      GoRoute(path: '/jigsaw/play', builder: (_, s) => BackKey(child: JigsawScreen(key: ValueKey(s.uri.toString()), pictureId: s.uri.queryParameters['pic']!, cut: Cut.values.byName(s.uri.queryParameters['cut']!)))),
+      GoRoute(path: '/taiwan', builder: (_, s) => BackKey(child: AliveScreen(key: ValueKey(s.uri.toString()), pictureId: s.uri.queryParameters['pic']!))),
+      GoRoute(path: '/tangram', builder: (_, _) => const BackKey(child: TangramList())),
+      GoRoute(path: '/tangram/play', builder: (_, s) => BackKey(child: TangramScreen(key: ValueKey(s.uri.toString()), figureId: s.uri.queryParameters['id']!))),
+      GoRoute(path: '/blocks', builder: (_, _) => const BackKey(child: CardList())),
+      GoRoute(path: '/blocks/play', builder: (_, s) => BackKey(child: BlocksScreen(key: ValueKey(s.uri.toString()), cardId: s.uri.queryParameters['id']!))),
+      GoRoute(path: '/rest', builder: (_, _) => const BackKey(child: RestScreen())),
+      // Parent mode closes by itself after five minutes without a touch.
+      GoRoute(
+        path: '/parent',
+        builder: (context, _) {
+          void home() => GoRouter.of(context).go('/');
+          return BackKey(onBack: home, child: ParentIdle(onIdle: home, child: const ParentScreen()));
+        },
+      ),
     ],
   );
   ref.onDispose(router.dispose);
@@ -106,16 +126,18 @@ class PuzzleApp extends ConsumerWidget {
 /// the minutes they set, the puzzle being put together may be finished (at most two more
 /// minutes, and its picture still comes alive), then the workshop's lights go down and the helper
 /// sleeps; an hour later (or when a parent says so) play can go on. Away from the app for ten
-/// minutes counts as a rest; time in parent mode or with the app in the background is not the
-/// child's play time, and a phone clock moved back gives no extra time. It also counts today's
-/// minutes for parent mode.
+/// minutes counts as a rest, closed or in the background: the sitting is kept on the phone, so the
+/// app closed and opened again goes on with it. Time on the parent gate, in parent mode or with
+/// the app in the background is not the child's play time, and a phone clock moved back gives no
+/// extra time. Parent mode left in the background is closed, so a child finds the workshop. It
+/// also counts today's minutes for parent mode.
 class RestGuard extends ConsumerStatefulWidget {
   const RestGuard({super.key, required this.child});
 
   final Widget child;
 
   static const check = Duration(seconds: 2);
-  static const awayIsRest = Duration(minutes: 10);
+  static const awayIsRest = Sitting.goesOn;
 
   /// How long a puzzle being put together may go on after the time is up.
   static const finishUp = Duration(minutes: 2);
@@ -146,11 +168,19 @@ class _RestGuardState extends ConsumerState<RestGuard> {
   void initState() {
     super.initState();
     ref.read(sessionStartProvider);
+    parentGateShowing.addListener(_gate);
     _timer = Timer.periodic(RestGuard.check, (_) => _check());
     _life = AppLifecycleListener(
       onHide: () {
         _save();
         _away = _now();
+        // Parent mode is not left open for a child to find: the workshop, and the gate has to be
+        // answered again.
+        final router = ref.read(routerProvider);
+        if (router.state.matchedLocation.startsWith('/parent')) {
+          ParentPass.take();
+          router.go('/');
+        }
       },
       onShow: () {
         final now = _now();
@@ -193,18 +223,53 @@ class _RestGuardState extends ConsumerState<RestGuard> {
     return now;
   }
 
+  /// The parent gate's time is parent time from the moment it opens until it closes (unless it
+  /// opened parent mode).
+  void _gate() {
+    if (_away != null) return;
+    if (parentGateShowing.value > 0) {
+      _parentSince ??= _now();
+      return;
+    }
+    // (The gate closes while the screens are being put up: just after.)
+    Future.microtask(() {
+      if (!mounted || _away != null || parentGateShowing.value > 0) return;
+      if (ref.read(routerProvider).state.matchedLocation.startsWith('/parent')) return;
+      _parentOver(_now());
+    });
+  }
+
+  /// Parent time is over: given back to the child.
+  void _parentOver(DateTime now) {
+    final parentSince = _parentSince;
+    if (parentSince == null) return;
+    _parentSince = null;
+    ref.read(sessionStartProvider.notifier).pause(now.difference(parentSince));
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
     _life?.dispose();
+    parentGateShowing.removeListener(_gate);
     super.dispose();
   }
 
+  /// Saves the seconds played, and the sitting: how much play time it has used (parent time not
+  /// yet given back left out) and when.
   void _save() {
-    if (_unsaved <= 0) return;
+    final now = ref.read(clockProvider)();
     final s = _unsaved;
     _unsaved = 0;
-    ref.read(gameProvider.notifier).change((g) => g.played(ref.read(clockProvider)(), s));
+    var used = now.difference(ref.read(sessionStartProvider));
+    final p = _parentSince;
+    if (p != null && now.isAfter(p)) used -= now.difference(p);
+    final sitting = Sitting(used.isNegative ? Duration.zero : used, now);
+    ref.read(gameProvider.notifier).change((g) {
+      final played = s > 0 ? g.played(now, s) : g;
+      // Resting: there is no sitting to go on with.
+      return g.restSince != null ? played : played.copyWith(sitting: sitting);
+    });
   }
 
   void _check() {
@@ -216,20 +281,18 @@ class _RestGuardState extends ConsumerState<RestGuard> {
     final g = ref.read(gameProvider);
     final router = ref.read(routerProvider);
     final path = router.state.matchedLocation;
-    final playing = !path.startsWith('/parent') && path != '/rest' && path != '/helper';
+    // The parent gate (on top of the workshop or the rest) is parent time too.
+    final parent = path.startsWith('/parent') || parentGateShowing.value > 0;
+    final playing = !parent && path != '/rest' && path != '/helper';
     if (playing) {
       _unsaved += RestGuard.check.inSeconds;
       if (_unsaved >= RestGuard.saveEvery) _save();
     }
-    if (path.startsWith('/parent')) {
+    if (parent) {
       _parentSince ??= now;
       return;
     }
-    final parentSince = _parentSince;
-    if (parentSince != null) {
-      _parentSince = null;
-      ref.read(sessionStartProvider.notifier).pause(now.difference(parentSince));
-    }
+    _parentOver(now);
     if (g.restSince != null) {
       if (g.resting(now)) {
         if (path != '/rest') router.go('/rest');
