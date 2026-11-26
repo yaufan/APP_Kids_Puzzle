@@ -41,12 +41,13 @@ class TestApp {
   void change(Game Function(Game g) f) => container.read(gameProvider.notifier).change(f);
 
   static Future<TestApp> start(WidgetTester tester,
-      {Game game = const Game(helper: Helper.pangolin), Size size = const Size(1080, 2340), double ratio = 2.75, String at = '/', int seed = 1, RecordingVoice? voice}) async {
+      {Game game = const Game(helper: Helper.pangolin), Size size = const Size(1080, 2340), double ratio = 2.75, String at = '/', int seed = 1, RecordingVoice? voice, DateTime? now}) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = ratio;
     addTearDown(tester.view.reset);
     final store = MemoryStore();
     final app = TestApp(tester, store, RecordingSounds(), voice ?? RecordingVoice());
+    if (now != null) app.now = now;
     await tester.pumpWidget(RepaintBoundary(
       key: shotKey,
       child: ProviderScope(
