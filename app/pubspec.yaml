@@ -3,7 +3,7 @@ description: "拼拼樂工坊：2 歲半～5 歲的拼圖、七巧板和形狀�
 publish_to: 'none'
 
 # The version (also in lib/app/version.dart and CHANGELOG.md; test/version_test.dart checks they agree).
-version: 0.1.0+1
+version: 0.1.1+2
 
 environment:
   sdk: ^3.13.7

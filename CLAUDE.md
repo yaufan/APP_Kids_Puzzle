@@ -61,21 +61,21 @@
 ## 程式在哪裡
 - `design/content.py`：六盒 48 張拼圖（場景、會動的東西和它的框、怎麼動、聲音、小幫手說的空間的話）和六塊嵌板，寫成 `app/assets/content.json`。
 - `design/puzzles.py`：七巧板 24 個（小小和中一塊一塊寫好；大的七塊用小小的「拼法搜尋」從外框算出來，一定拼得出來）、照著拼 12 張（三角形格子；大的「其他拼法」也算好）、台灣大拼圖 48 塊，用 shapely 檢查，寫成 `tangram.json`、`blocks.json`、`taiwan.json`；`preview` 畫出來看。
-- `app/lib/core/`：`content.dart`（讀上面的 json；`Level`、`Mode`、`Helper` 六隻小幫手）、`jigsaw.dart`（同一張圖切成 2～24 塊，凸凹用圖的名字當亂數種子；角、邊、中間的順序）、`board.dart`（拼東西的規則：磁鐵、最近的位置贏、轉對了沒、托盤一次 6 塊、點和拖分開、不會拖出畫面）、`shapes.dart`（形狀盒的形狀和六關）、`game.dart`（設定、塊數的梯子、進度、今天、休息）、存檔、聲音（拼的時候音樂小聲）、語音（每隻小幫手自己的音高）、providers（`busyProvider`：正在拼，時間到了可以拼完）。
-- `app/lib/app/`：router 和休息時間（`app.dart`，`RestGuard`：家長模式和背景的時間不算、正在拼的可以再 2 分鐘）、`wood.dart`（Flutter 畫木頭：木片、洞、板子）、`widgets.dart`（`Pressable`、`HelperSays`、`DoneButtons`……）、`strings.dart`（所有的字；**APP 名稱只在 `Strings.appName`**，和 Android、iOS 的名稱一起改，`safety_test` 會檢查）、`theme.dart`。
+- `app/lib/core/`：`content.dart`（讀上面的 json；`Level`、`Mode`、`Helper` 六隻小幫手）、`jigsaw.dart`（同一張圖切成 2～24 塊，凸凹用圖的名字當亂數種子；角、邊、中間的順序）、`board.dart`（拼東西的規則：磁鐵、最近的位置贏、轉對了沒、托盤一次 6 塊、點和拖分開、不會拖出畫面）、`shapes.dart`（形狀盒的形狀和六關）、`game.dart`（設定、塊數的梯子、進度、今天、休息）、存檔（`game.dart` 也存這次玩了多久 `Sitting`：關掉 10 分鐘內再打開接著算；家長關卡連錯的等待 `GateLock`）、聲音（拼的時候音樂小聲；`soundContext` 走媒體音量，`_switching` 讓音樂一個一個換）、語音（每隻小幫手自己的音高；APP 在背景時不說）、providers（`busyProvider`：正在拼，時間到了可以拼完；`keptProvider`：拼到一半離開的拼圖、七巧板、照著拼，回來時塊還在）。
+- `app/lib/app/`：router 和休息時間（`app.dart`，`RestGuard`：家長模式、家長關卡和背景的時間不算、正在拼的可以再 2 分鐘、家長模式留在背景就回工坊；每個畫面包 `BackKey`，手機的返回鍵不會關掉 APP，`TopBar` 讓返回鍵和小房子一樣）、`wood.dart`（Flutter 畫木頭：木片、洞、板子）、`widgets.dart`（`Pressable`、`HelperSays`、`DoneButtons`……）、`strings.dart`（所有的字；**APP 名稱只在 `Strings.appName`**，和 Android、iOS 的名稱一起改，`safety_test` 會檢查）、`theme.dart`。
 - `app/lib/features/`：`common/board_view.dart`（**四種玩法共用的拖放引擎**：原始手指事件、只認第一隻手指、取消就放回、點一下拿起再點位置、提示、轉和翻）、`common/play_page.dart`（拼圖頁、拼好的面板、`Alive` 圖動起來、`TaiwanView` 台灣大拼圖）、`helper/`、`home/`（工坊，家長的鎖要按住）、`shapes/`（形狀盒、嵌板）、`jigsaw/`（盒子、選圖和塊數、拼圖、點台灣的塊再看一次）、`tangram/`、`blocks/`、`rest/`、`parent/`。
 - 圖：`design/art/`（`kit.py` 彩繪木頭的畫法、`helpers.py`、`actors.py`、`pictures.py`、`ui.py`、`icon.py`；`build.py all`、`sheet`、`fluttercheck`），約定在 `docs/art.md`。聲音：`design/sounds/make_sounds.py`（`README.md` 有每個檔）。
-- 測試：`rules_test`（切拼圖、拼東西的規則、七巧板和積木的資料、存檔）、`art_test`、`safety_test`、`version_test`、`screens_test`（兄弟 APP 檢查過的問題：玩的時間、語音、第一隻手指、取消、點和拖、開關、小手機）、`flow_test`（手機和平板，三個難度、每種玩法，截圖 37 張）、`demo/demo_video_test.dart`（`--dart-define=DEMO=true`，再 `python3 tools/demo_audio.py`）。
+- 測試：`rules_test`（切拼圖、拼東西的規則、七巧板和積木的資料、存檔）、`art_test`、`safety_test`、`version_test`、`screens_test`（兄弟 APP 檢查過的問題：玩的時間、語音、第一隻手指、取消、點和拖、開關、小手機；0.1.1 加的：返回鍵、拼到一半回來還在、關掉再打開接著算、家長模式和關卡自己關上、關卡等待變長、音樂排隊）、`flow_test`（手機和平板，三個難度、每種玩法，截圖 37 張）、`demo/demo_video_test.dart`（`--dart-define=DEMO=true`，再 `python3 tools/demo_audio.py`）。
 
-## 目前的狀態（2026-11-15）
-- 0.1.0 已發布（2026-11-16）：Releases 有三個 APK，App 和 Release 都成功；Secrets 加好了。發布前做過程式檢查（見下一行）。
-- 發布前做過程式檢查（2026-11-15），修了（版本還是 0.1.0，測試在 `rules_test`、`screens_test`、`safety_test`）：
-  - 拖放：先碰到螢幕、沒拿塊的手掌不會擋住別的手指；拖到一半 APP 跑到背景，回來還能拿塊；大的七巧板兩個一樣的三角形，轉對了哪一個就進哪一個；提示和爪子會找還有位置的塊（大的照著拼放了六角形以後不會沒反應）。
-  - 照著拼的大：三角形給到夠用，怎麼放都拼得完（以前會留下沒有積木放得進去的洞）；托盤的點點在小手機上不會超出去。
-  - 休息：APP 在背景的時間不算、也不會在背景開始休息；手機時間往回調不會多玩、也不會提早結束休息；按「下一張」「再拼一次」後新的那張也可以拼完；最後一塊放好的圖會動完才休息。
-  - 語音：形狀盒和嵌板最後一塊的話不會被「拼好了」切掉；語音剛啟動時，新的一句不會被舊的一句蓋掉。
-  - 選單：手指滑動捲清單不會誤開圖、台灣大拼圖的塊和家長的鎖；家長的鎖要手指停在上面按住。
-  - 其他：家長只留「照著拼」又換成小小（或免費版）時，架子不會空掉（形狀洞洞會回來）；換小幫手時，還沒選新的之前舊的還在（休息畫面睡的是自己的小幫手）。
-  - 示範影片沒有重做（只有大的照著拼托盤上三角形的點點多了「…」）。
+## 目前的狀態（2026-11-26）
+- 0.1.0 已發布（2026-11-16）：Releases 有三個 APK，App 和 Release 都成功；Secrets 加好了。發布前做過一次程式檢查（拖放、照著拼的大、休息、語音、選單、架子、換小幫手）。
+- **0.1.1 做好了、還沒發布**（在 `claude/relaxed-albattani-6mbwpz` 分支，推 `main` 要先問使用者）：2026-11-26 兄弟 APP 一起檢查後修的——
+  - APP 關掉 10 分鐘內再打開接著算玩的時間（存在手機裡）；家長關卡上的時間不算。
+  - 手機的返回鍵不會關掉 APP，和畫面上的小房子一樣；工坊和休息畫面沒反應。
+  - 拼圖、七巧板、照著拼拼到一半離開（小房子、返回、休息），回到同一張時塊還在（只記在記憶體，APP 關掉就沒有）。形狀洞洞很短，沒有記。
+  - 家長模式和家長關卡切到背景或 5 分鐘沒碰會自己關上；休息畫面解開後不會留著進家長模式的門。
+  - 家長關卡連錯等 1、5、15 分鐘，存在手機裡，時鐘調回去不會鎖住。
+  - 聲音走媒體音量（震動和靜音也聽得到）、音樂換畫面時排隊（不會放錯）、APP 在背景時小幫手不說話、Android 11 以上找得到語音（`TTS_SERVICE`）。
+  - 不跟 Google 備份（`allowBackup`、`data_extraction_rules.xml`）；打包時多檢查相機、麥克風、聯絡人、相片的權限。
 - 名稱用「拼拼樂工坊」（拼圖的「拼」），使用者 2026-11-16 確認；要改的話改 `Strings.appName`、`AndroidManifest.xml`、`Info.plist`、`CHANGELOG.md` 和 README。
-- 還沒在真手機上試過：拖拉的手感和磁鐵的強弱、24 塊在小手機上好不好拿、平行四邊形的「翻」按鈕、每隻小幫手的語音高低、TTS 念的話、聲音好不好聽（做的時候沒辦法用耳朵聽）、音樂的大小、休息時正在拼的可以拼完。
+- 還沒在真手機上試過：拖拉的手感和磁鐵的強弱、24 塊在小手機上好不好拿、平行四邊形的「翻」按鈕、每隻小幫手的語音高低、TTS 念的話、聲音好不好聽（做的時候沒辦法用耳朵聽）、震動模式下有沒有「咔」和音樂、音樂的大小、休息時正在拼的可以拼完、托盤最邊邊的塊拖的時候會不會被手機當成返回（現在只會回到盒子，拼圖還在）。
