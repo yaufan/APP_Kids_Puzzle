@@ -19,7 +19,8 @@ import '../common/play_page.dart';
 /// Putting a picture together (docs/design.md 「拼圖」): the frame on top (the picture faint under
 /// it for 小小 and 中, dashed outlines for 中 from 9 pieces, only the frame for 大), six pieces at a
 /// time in the tray, corners and edges first from 12. Done: the picture comes alive and the Taiwan
-/// puzzle gets its piece.
+/// puzzle gets its piece. Left half done (home, the back key, the rest), the pieces stay where they
+/// were for when the child comes back to the same picture and size.
 class JigsawScreen extends ConsumerStatefulWidget {
   const JigsawScreen({super.key, required this.pictureId, required this.cut});
 
@@ -36,13 +37,18 @@ class _JigsawScreenState extends ConsumerState<JigsawScreen> with HushOnLeave {
   late final Level _level = ref.read(gameProvider).settings.level;
   late final Jigsaw _jig = Jigsaw(_pic.id, widget.cut);
   late final Map<String, JigsawPiece> _byId = {for (final p in _jig.pieces) p.id: p};
-  late final Board _board = Board([
-    for (final p in _jig.pieces) Slot(id: p.id, kind: p.id, at: p.center, outline: p.path.shift(p.cell.topLeft - Offset(p.margin, p.margin))),
-  ]);
-  late final List<Piece> _pieces = [
-    for (final p in _jig.order(ref.read(randomProvider), edgesFirst: ref.read(gameProvider).settings.edgesFirst && widget.cut.count >= 12))
-      Piece(id: p.id, kind: p.id, size: p.size),
-  ];
+  late final Map<String, Kept> _keep = ref.read(keptProvider);
+  late final String _keepKey = 'jigsaw/${widget.pictureId}/${widget.cut.name}';
+  late final Kept? _kept = _keep.remove(_keepKey);
+  late final Board _board = _kept?.board ??
+      Board([
+        for (final p in _jig.pieces) Slot(id: p.id, kind: p.id, at: p.center, outline: p.path.shift(p.cell.topLeft - Offset(p.margin, p.margin))),
+      ]);
+  late final List<Piece> _pieces = _kept?.pieces ??
+      [
+        for (final p in _jig.order(ref.read(randomProvider), edgesFirst: ref.read(gameProvider).settings.edgesFirst && widget.cut.count >= 12))
+          Piece(id: p.id, kind: p.id, size: p.size),
+      ];
   final _hint = ValueNotifier(0);
   late String _line = _pic.zh;
   var _cheer = 0, _placed = 0;
@@ -53,6 +59,7 @@ class _JigsawScreenState extends ConsumerState<JigsawScreen> with HushOnLeave {
   @override
   void initState() {
     super.initState();
+    _placed = _board.placed.length;
     _openBefore = ref.read(gameProvider).cutsOpen(_level);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) speak(ref, '${_pic.zh}，${Strings.pieces(widget.cut.count)}！');
@@ -63,6 +70,7 @@ class _JigsawScreenState extends ConsumerState<JigsawScreen> with HushOnLeave {
   void dispose() {
     _hint.dispose();
     _later?.cancel();
+    if (!_done && !_board.done && _board.placed.isNotEmpty) _keep[_keepKey] = Kept(_board, _pieces);
     super.dispose();
   }
 

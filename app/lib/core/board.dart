@@ -163,8 +163,14 @@ class Board {
 /// coming into the place of the one put on the board; or, for the pattern blocks, one stack per
 /// kind of block with how many are left.
 class Tray {
-  Tray(List<Piece> order, {this.size = 6, this.stacks = false}) : _queue = [...order] {
+  /// [placed]: pieces already on the board (a puzzle the child comes back to).
+  Tray(List<Piece> order, {this.size = 6, this.stacks = false, Set<String> placed = const {}})
+      : _queue = [
+          for (final p in order)
+            if (stacks || !placed.contains(p.id)) p,
+        ] {
     if (stacks) {
+      _used.addAll(placed);
       for (final p in _queue) {
         if (!_kinds.contains(p.kind)) _kinds.add(p.kind);
       }

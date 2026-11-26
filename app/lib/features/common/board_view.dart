@@ -78,7 +78,7 @@ class PuzzleBoard extends ConsumerStatefulWidget {
 }
 
 class PuzzleBoardState extends ConsumerState<PuzzleBoard> {
-  late final Tray _tray = Tray(widget.pieces, stacks: widget.stacks, size: math.max(1, math.min(6, widget.pieces.length)));
+  late final Tray _tray = Tray(widget.pieces, stacks: widget.stacks, size: math.max(1, math.min(6, widget.pieces.length)), placed: widget.board.placed.keys.toSet());
   final _anim = <String, Duration>{};
   final _hops = <String, int>{};
   final _misses = <String, int>{};

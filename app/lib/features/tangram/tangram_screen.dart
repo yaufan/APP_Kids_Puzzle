@@ -164,7 +164,8 @@ class FigurePainter extends CustomPainter {
   bool shouldRepaint(FigurePainter old) => old.f != f || old.colored != colored;
 }
 
-/// Putting a figure together (docs/design.md 「七巧板」 and 「轉動和翻面」).
+/// Putting a figure together (docs/design.md 「七巧板」 and 「轉動和翻面」). Left half done, the
+/// pieces stay where they were for when the child comes back to the same figure.
 class TangramScreen extends ConsumerStatefulWidget {
   const TangramScreen({super.key, required this.figureId});
 
@@ -178,7 +179,10 @@ class _TangramScreenState extends ConsumerState<TangramScreen> with HushOnLeave 
   late final Library _lib = ref.read(libraryProvider);
   late final TanFigure _f = _lib.tangrams.firstWhere((t) => t.id == widget.figureId);
   late final Turning _turning = ref.read(gameProvider).settings.tangramTurning(_f.level);
-  late final Board _board = Board([
+  late final Map<String, Kept> _keep = ref.read(keptProvider);
+  late final String _keepKey = 'tangram/${widget.figureId}/${_turning.name}';
+  late final Kept? _kept = _keep.remove(_keepKey);
+  late final Board _board = _kept?.board ?? Board([
     for (var i = 0; i < _f.slots.length; i++)
       Slot(
         id: 's$i',
@@ -191,7 +195,7 @@ class _TangramScreenState extends ConsumerState<TangramScreen> with HushOnLeave 
         outline: _f.slots[i].path,
       ),
   ]);
-  late final List<Piece> _pieces = () {
+  late final List<Piece> _pieces = _kept?.pieces ?? () {
     final r = ref.read(randomProvider);
     final out = <Piece>[];
     for (var i = 0; i < _f.slots.length; i++) {
@@ -220,6 +224,7 @@ class _TangramScreenState extends ConsumerState<TangramScreen> with HushOnLeave 
   @override
   void initState() {
     super.initState();
+    _placed = _board.placed.length;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) speak(ref, _line);
     });
@@ -228,6 +233,7 @@ class _TangramScreenState extends ConsumerState<TangramScreen> with HushOnLeave 
   @override
   void dispose() {
     _hint.dispose();
+    if (!_done && !_board.done && _board.placed.isNotEmpty) _keep[_keepKey] = Kept(_board, _pieces);
     super.dispose();
   }
 

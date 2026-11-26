@@ -169,7 +169,8 @@ class CardPainter extends CustomPainter {
 }
 
 /// Copying a card with pattern blocks: 中 has each block's place drawn in dashes and needs the
-/// card's own blocks; 大 only has the outline and any blocks that fill it are right.
+/// card's own blocks; 大 only has the outline and any blocks that fill it are right. Left half
+/// done, the blocks stay where they were for when the child comes back to the same card.
 class BlocksScreen extends ConsumerStatefulWidget {
   const BlocksScreen({super.key, required this.cardId});
 
@@ -183,12 +184,15 @@ class _BlocksScreenState extends ConsumerState<BlocksScreen> with HushOnLeave {
   late final Library _lib = ref.read(libraryProvider);
   late final BlockCard _c = _lib.cards.firstWhere((c) => c.id == widget.cardId);
   late final bool _fill = ref.read(gameProvider).settings.level == Level.big;
-  late final Board _board = Board([
+  late final Map<String, Kept> _keep = ref.read(keptProvider);
+  late final String _keepKey = 'blocks/${widget.cardId}/$_fill';
+  late final Kept? _kept = _keep.remove(_keepKey);
+  late final Board _board = _kept?.board ?? Board([
     for (var i = 0; i < _c.slots.length; i++) _slot('s$i', _c.slots[i]),
     if (_fill)
       for (var i = 0; i < _c.extra.length; i++) _slot('x$i', _c.extra[i]),
   ], need: _c.cells);
-  late final List<Piece> _pieces = blockPieces(_c, _lib.blockKinds, fill: _fill);
+  late final List<Piece> _pieces = _kept?.pieces ?? blockPieces(_c, _lib.blockKinds, fill: _fill);
   final _hint = ValueNotifier(0);
   late String _line = _fill ? Strings.blocksAskFill : Strings.blocksAsk;
   var _cheer = 0, _placed = 0;
@@ -207,6 +211,8 @@ class _BlocksScreenState extends ConsumerState<BlocksScreen> with HushOnLeave {
   @override
   void initState() {
     super.initState();
+    _placed = _board.placed.length;
+    _other = _board.placed.values.any((s) => s.id.startsWith('x'));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) speak(ref, '${_c.zh}！$_line');
     });
@@ -215,6 +221,7 @@ class _BlocksScreenState extends ConsumerState<BlocksScreen> with HushOnLeave {
   @override
   void dispose() {
     _hint.dispose();
+    if (!_done && !_board.done && _board.placed.isNotEmpty) _keep[_keepKey] = Kept(_board, _pieces);
     super.dispose();
   }
 
